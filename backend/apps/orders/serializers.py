@@ -201,6 +201,17 @@ class CheckoutSerializer(serializers.Serializer):
     payment_method = serializers.CharField(max_length=32, required=False, allow_blank=True)
 
 
+class QuoteSerializer(CheckoutSerializer):
+    """Quotes price the cart before contact details are entered."""
+
+    customer_name = serializers.CharField(
+        max_length=150, required=False, allow_blank=True, default=""
+    )
+    customer_phone = serializers.CharField(
+        max_length=32, required=False, allow_blank=True, default=""
+    )
+
+
 def quote_data(q: Any) -> dict[str, Any]:
     return {
         "subtotal": q.subtotal,

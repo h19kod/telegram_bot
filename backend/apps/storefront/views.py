@@ -20,7 +20,12 @@ from apps.customers.services import upsert_from_telegram
 from apps.delivery.models import DeliveryZone
 from apps.notifications.outbox import enqueue
 from apps.orders.models import EventSource, Order
-from apps.orders.serializers import CheckoutSerializer, priced_cart_data, quote_data
+from apps.orders.serializers import (
+    CheckoutSerializer,
+    QuoteSerializer,
+    priced_cart_data,
+    quote_data,
+)
 from apps.orders.services import cart as cart_svc
 from apps.orders.services.checkout import CheckoutInput, place_order, quote
 from apps.orders.services.transitions import transition
@@ -252,7 +257,7 @@ def idempotency_key(request: Request) -> uuid.UUID:
 
 class QuoteView(StoreView):
     def post(self, request: Request, slug: str) -> Response:
-        s = CheckoutSerializer(data=request.data)
+        s = QuoteSerializer(data=request.data)
         s.is_valid(raise_exception=True)
         q = quote(self.customer, self.branch(), checkout_input(s.validated_data, "mini_app", None))
         return Response(quote_data(q))

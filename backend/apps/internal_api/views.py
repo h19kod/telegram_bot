@@ -20,7 +20,12 @@ from apps.customers.services import upsert_from_telegram
 from apps.delivery.models import DeliveryZone
 from apps.notifications.outbox import enqueue
 from apps.orders.models import EventSource, Order, OrderStatus
-from apps.orders.serializers import CheckoutSerializer, priced_cart_data, quote_data
+from apps.orders.serializers import (
+    CheckoutSerializer,
+    QuoteSerializer,
+    priced_cart_data,
+    quote_data,
+)
 from apps.orders.services import cart as cart_svc
 from apps.orders.services.checkout import place_order, quote
 from apps.orders.services.transitions import transition
@@ -286,7 +291,7 @@ class CartItemView(CustomerScoped):
 class QuoteView(CustomerScoped):
     def post(self, request: Request, bot_id: uuid.UUID, tg_id: int) -> Response:
         business, customer = self.ctx(request, bot_id, tg_id)
-        s = CheckoutSerializer(data=request.data)
+        s = QuoteSerializer(data=request.data)
         s.is_valid(raise_exception=True)
         q = quote(customer, default_branch(business), checkout_input(s.validated_data, "bot", None))
         return Response(quote_data(q))

@@ -77,6 +77,7 @@ def _validate(
     customer: Customer,
     data: CheckoutInput,
     priced: PricedCart,
+    for_quote: bool = False,
 ) -> Quote:
     ensure_can_take_orders(business)
     if customer.is_blocked:
@@ -101,13 +102,15 @@ def _validate(
     if data.fulfilment == Fulfilment.PICKUP and not branch.accepts_pickup:
         raise DomainError("fulfilment_unavailable")
 
-    name = data.customer_name.strip()
-    if not 2 <= len(name) <= 150:
-        raise DomainError("validation_error", {"customer_name": ["2-150 characters"]}, 400)
-    try:
-        phone = normalize_phone(data.customer_phone)
-    except InvalidPhoneNumber:
-        raise DomainError("invalid_phone", status_code=400) from None
+    phone = ""
+    if not for_quote:  # quotes price the cart before contact details are entered
+        name = data.customer_name.strip()
+        if not 2 <= len(name) <= 150:
+            raise DomainError("validation_error", {"customer_name": ["2-150 characters"]}, 400)
+        try:
+            phone = normalize_phone(data.customer_phone)
+        except InvalidPhoneNumber:
+            raise DomainError("invalid_phone", status_code=400) from None
 
     payment = data.payment_method or (
         PaymentMethod.CASH_ON_DELIVERY
@@ -137,8 +140,9 @@ def _validate(
         )
         if zone is None:
             raise DomainError("delivery_zone_invalid", status_code=400)
-        if not data.address_area.strip() or not (
-            data.address_street.strip() or data.address_landmark.strip()
+        if not for_quote and (
+            not data.address_area.strip()
+            or not (data.address_street.strip() or data.address_landmark.strip())
         ):
             raise DomainError("address_required", status_code=400)
         if zone.min_order is not None and subtotal < zone.min_order:
@@ -165,7 +169,7 @@ def _validate(
 def quote(customer: Customer, branch: Branch, data: CheckoutInput) -> Quote:
     cart = get_active_cart(customer, branch, create=False)
     business = Business.objects.select_related("settings").get(pk=customer.business_id)
-    return _validate(business, branch, customer, data, price_cart(cart))
+    return _validate(business, branch, customer, data, price_cart(cart), for_quote=True)
 
 
 def _existing(customer: Customer, key: uuid.UUID) -> Order | None:

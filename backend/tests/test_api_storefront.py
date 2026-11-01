@@ -118,3 +118,16 @@ def test_english_localisation(api, store):
     assert r.json()["results"][0]["name"] == "Burger"
     r = api.get(f"/api/v1/store/{store.slug}/products", HTTP_ACCEPT_LANGUAGE="ar")
     assert r.json()["results"][0]["name"] == "برغر"
+
+
+def test_quote_without_contact_details(api, store):
+    session(api, store)
+    p = make_product(store, price=4000)
+    zone = make_zone(store, fee=1000)
+    base = f"/api/v1/store/{store.slug}"
+    api.post(f"{base}/cart/items", {"product_id": str(p.id)}, format="json")
+    r = api.post(
+        f"{base}/checkout/quote", {"fulfilment": "delivery", "zone_id": str(zone.id)}, format="json"
+    )
+    assert r.status_code == 200, r.json()
+    assert r.json()["total"] == 5000
