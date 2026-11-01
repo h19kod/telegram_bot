@@ -96,7 +96,13 @@ CACHES = {
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [env("CHANNELS_REDIS_URL", default=REDIS_URL)]},
+        # redis-py 8 defaults socket_timeout=5s, equal to channels-redis' 5s blocking pop;
+        # a larger timeout prevents idle consumers from crashing with TimeoutError.
+        "CONFIG": {
+            "hosts": [
+                {"address": env("CHANNELS_REDIS_URL", default=REDIS_URL), "socket_timeout": 30}
+            ]
+        },
     }
 }
 
@@ -235,6 +241,7 @@ CELERY_TASK_ROUTES = {
     "apps.analytics.tasks.*": {"queue": "reports"},
 }
 CELERY_BEAT_SCHEDULE = {
+    "worker-heartbeat": {"task": "core.tasks.worker_heartbeat", "schedule": 30.0},
     "drain-notification-outbox": {
         "task": "apps.notifications.tasks.drain_outbox",
         "schedule": 15.0,
