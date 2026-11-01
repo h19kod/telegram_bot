@@ -187,3 +187,67 @@ def _safe_cell(value: Any) -> Any:
     if isinstance(value, str) and value[:1] in ("=", "+", "-", "@", "\t", "\r"):
         return "'" + value
     return value
+
+
+class CouponSerializer(serializers.ModelSerializer):
+    class Meta:
+        from apps.orders.models import Coupon
+
+        model = Coupon
+        fields = [
+            "id",
+            "code",
+            "kind",
+            "value",
+            "max_discount",
+            "min_order",
+            "starts_at",
+            "ends_at",
+            "usage_limit",
+            "per_customer_limit",
+            "used_count",
+            "is_active",
+            "created_at",
+        ]
+        read_only_fields = ["id", "used_count", "created_at"]
+
+    def validate_code(self, v: str) -> str:
+        from apps.orders.models import Coupon
+        from apps.orders.services.coupons import normalize_code
+
+        code = normalize_code(v)
+        if len(code) < 3 or not code.isalnum():
+            raise serializers.ValidationError("3-32 letters/digits")
+        clash = Coupon.objects.for_business(self.context["request"].business).filter(code=code)
+        if self.instance is not None:
+            clash = clash.exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise serializers.ValidationError("already exists")
+        return code
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        kind = attrs.get("kind", getattr(self.instance, "kind", None))
+        value = attrs.get("value", getattr(self.instance, "value", 0))
+        if kind == "percent" and not 1 <= value <= 100:
+            raise serializers.ValidationError({"value": "1-100"})
+        start = attrs.get("starts_at", getattr(self.instance, "starts_at", None))
+        end = attrs.get("ends_at", getattr(self.instance, "ends_at", None))
+        if start and end and end <= start:
+            raise serializers.ValidationError({"ends_at": "must be after starts_at"})
+        return attrs
+
+
+class CouponViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsBusinessMember]
+    required_permissions = {"*": ["catalog.edit_prices"]}
+    serializer_class = CouponSerializer
+    pagination_class = None
+
+    def get_queryset(self):  # type: ignore[no-untyped-def]
+        from apps.orders.models import Coupon
+
+        return Coupon.objects.for_business(self.request.business)
+
+    def perform_create(self, serializer: serializers.BaseSerializer) -> None:
+        require_feature(self.request.business.id, "coupons")
+        serializer.save(business=self.request.business)

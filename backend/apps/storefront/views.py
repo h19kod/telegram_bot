@@ -244,6 +244,7 @@ def checkout_input(data: dict[str, Any], channel: str, key: uuid.UUID | None) ->
         longitude=data.get("longitude"),
         notes=data.get("notes", ""),
         payment_method=data.get("payment_method", ""),
+        coupon_code=data.get("coupon_code", ""),
     )
 
 

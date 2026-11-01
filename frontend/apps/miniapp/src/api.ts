@@ -134,6 +134,7 @@ export interface CheckoutBody {
   address_landmark?: string;
   address_building?: string;
   notes?: string;
+  coupon_code?: string;
 }
 
 export interface Quote {
@@ -143,6 +144,7 @@ export interface Quote {
   total: number;
   currency: string;
   payment_method: string;
+  coupon: { code: string; discount: number } | null;
   zone: { id: string; name_ar: string; name_en: string; eta_min: number | null;
     eta_max: number | null } | null;
 }

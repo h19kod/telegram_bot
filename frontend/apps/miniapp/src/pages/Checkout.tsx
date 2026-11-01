@@ -30,6 +30,8 @@ export function CheckoutPage() {
     address_building: "", notes: "",
   });
   const [errors, setErrors] = useState<Errors>({});
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState("");
   // One key per checkout screen: retries and double taps cannot create two orders.
   const idemKey = useRef(newIdempotencyKey());
   const set = <K extends keyof CheckoutBody>(k: K, v: CheckoutBody[K]) => {
@@ -50,15 +52,15 @@ export function CheckoutPage() {
     ? { ...form, zone_id: null } : form, [form]);
   const canQuote = form.fulfilment === "pickup" || Boolean(form.zone_id);
   const quote = useQuery({
-    queryKey: ["quote", form.fulfilment, form.zone_id, cart.data?.subtotal],
+    queryKey: ["quote", form.fulfilment, form.zone_id, cart.data?.subtotal, coupon],
     queryFn: () => api.quote({ fulfilment: quoteBody.fulfilment, zone_id: quoteBody.zone_id,
-      customer_name: "", customer_phone: "" }),
+      customer_name: "", customer_phone: "", coupon_code: coupon }),
     enabled: canQuote && Boolean(cart.data?.lines.length), retry: false,
   });
 
   const place = useMutation({
-    mutationFn: () => api.checkout(form.fulfilment === "pickup"
-      ? { ...form, zone_id: null } : form, idemKey.current),
+    mutationFn: () => api.checkout({ ...(form.fulfilment === "pickup"
+      ? { ...form, zone_id: null } : form), coupon_code: coupon }, idemKey.current),
     onSuccess: (order) => {
       haptic.success();
       qc.invalidateQueries({ queryKey: ["cart"] });
@@ -177,6 +179,24 @@ export function CheckoutPage() {
             </Field>
           </Card>
         )}
+
+        <Card className="p-4">
+          <Field label={t("coupon")}>
+            <div className="flex gap-2">
+              <Input value={coupon || couponInput} disabled={Boolean(coupon)} dir="ltr"
+                className="uppercase" maxLength={32}
+                onChange={(e) => setCouponInput(e.target.value)} />
+              {coupon ? (
+                <Button type="button" variant="ghost" className="shrink-0"
+                  onClick={() => { setCoupon(""); setCouponInput(""); }}>{t("remove_coupon")}</Button>
+              ) : (
+                <Button type="button" variant="soft" className="shrink-0"
+                  disabled={couponInput.trim().length < 3}
+                  onClick={() => { setCoupon(couponInput.trim()); haptic.tap(); }}>{t("apply")}</Button>
+              )}
+            </div>
+          </Field>
+        </Card>
 
         <Card className="space-y-2 p-4 text-[15px]">
           <Row label={t("subtotal")} value={money(quote.data?.subtotal ?? cart.data?.subtotal

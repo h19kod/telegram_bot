@@ -198,6 +198,7 @@ class CheckoutSerializer(serializers.Serializer):
         max_value=180,
     )
     notes = serializers.CharField(max_length=500, required=False, allow_blank=True)
+    coupon_code = serializers.CharField(max_length=32, required=False, allow_blank=True)
     payment_method = serializers.CharField(max_length=32, required=False, allow_blank=True)
 
 
@@ -220,6 +221,7 @@ def quote_data(q: Any) -> dict[str, Any]:
         "total": q.total,
         "currency": q.currency,
         "payment_method": q.payment_method,
+        "coupon": {"code": q.coupon.code, "discount": q.discount_total} if q.coupon else None,
         "zone": {
             "id": str(q.zone.id),
             "name_ar": q.zone.name_ar,

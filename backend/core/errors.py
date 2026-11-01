@@ -56,6 +56,13 @@ MESSAGES: dict[str, tuple[str, str]] = {
     "otp_required": ("أدخل رمز التحقق", "Two-factor code required"),
     "invalid_otp": ("رمز التحقق غير صحيح", "Invalid two-factor code"),
     "invalid_image": ("الصورة غير صالحة", "Invalid image"),
+    "coupon_invalid": ("كود الخصم غير صحيح", "Invalid coupon code"),
+    "coupon_expired": ("كود الخصم منتهي", "This coupon has expired"),
+    "coupon_min_order": (
+        "الطلب أقل من الحد الأدنى لهذا الكود",
+        "Order is below this coupon's minimum",
+    ),
+    "coupon_exhausted": ("كود الخصم مستخدم بالكامل", "This coupon has been used up"),
     "ai_unavailable": ("المساعد الذكي غير متاح حالياً", "The AI assistant is unavailable"),
 }
 

@@ -55,6 +55,7 @@ class CheckoutInput:
     longitude: Decimal | None = None
     notes: str = ""
     payment_method: str = ""
+    coupon_code: str = ""
 
 
 @dataclass
@@ -68,6 +69,7 @@ class Quote:
     zone: DeliveryZone | None
     phone: str
     payment_method: str
+    coupon: Any = None
     warnings: list[str] = field(default_factory=list)
 
 
@@ -152,7 +154,13 @@ def _validate(
     if subtotal < cfg.min_order_amount:
         raise DomainError("below_minimum_order", {"minimum": cfg.min_order_amount})
 
-    discount_total = 0
+    discount_total, coupon = 0, None
+    if data.coupon_code.strip():
+        from apps.orders.services.coupons import resolve
+
+        coupon, discount_total = resolve(
+            business.id, customer, data.coupon_code, subtotal, lock=not for_quote
+        )
     return Quote(
         priced=priced,
         subtotal=subtotal,
@@ -163,6 +171,7 @@ def _validate(
         zone=zone,
         phone=phone,
         payment_method=payment,
+        coupon=coupon,
     )
 
 
@@ -279,6 +288,11 @@ def place_order(customer: Customer, branch: Branch, data: CheckoutInput) -> tupl
                 ).update(stock_quantity=F("stock_quantity") - line.item.quantity)
                 if not updated:
                     raise DomainError("insufficient_stock", {"product_id": str(product.pk)})
+
+        if q.coupon is not None and q.discount_total:
+            from apps.orders.services.coupons import redeem
+
+            redeem(q.coupon, order, q.discount_total)
 
         OrderStatusEvent.objects.create(
             business=business,

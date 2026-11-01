@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "../components/Shell";
 import { Badge, Button, Card, cx, Empty, ErrorBox, errorMessage, Field, Input, Loading, Modal,
   Pager, Select, Table, TextArea, Toggle, useUi } from "../components/ui";
-import { ApiError, del, get, patch, post, qs, upload, type Category, type OptionGroup,
-  type Paginated, type Product } from "../lib/api";
+import { ApiError, del, get, patch, post, qs, upload, type Category, type Coupon,
+  type OptionGroup, type Paginated, type Product } from "../lib/api";
 import { useBizKey, useBizPath, useSession } from "../lib/session";
 
 const toInt = (v: string) => (v.trim() === "" ? null : Math.max(0, Math.round(Number(v))));
@@ -305,7 +305,10 @@ export function DiscountsPage() {
   });
   return (
     <>
-      <PageHeader title={t("discounts")}><p className="mt-2 text-[14px] text-hint">{t("discount_hint")}</p></PageHeader>
+      <PageHeader title={t("discounts")} />
+      <Coupons />
+      <h2 className="mt-6 mb-1 text-[17px] font-bold">{t("product_discounts")}</h2>
+      <p className="mb-3 text-[14px] text-hint">{t("discount_hint")}</p>
       {q.isPending ? <Loading /> : q.isError ? <ErrorBox error={q.error} /> : (
         <Table empty={!q.data.results.length} head={[t("name_ar"), t("compare_at"), t("price"), t("discount_pct"), ""]}>
           {q.data.results.map((p) => {
@@ -328,5 +331,61 @@ export function DiscountsPage() {
         </Table>
       )}
     </>
+  );
+}
+
+function Coupons() {
+  const { t, money, lang } = useSession();
+  const key = useBizKey();
+  const path = useBizPath();
+  const qc = useQueryClient();
+  const { toast, confirm } = useUi();
+  const q = useQuery({ queryKey: key("coupons"), queryFn: () => get<Coupon[]>(path("/coupons")) });
+  const empty = { code: "", kind: "percent", value: "", max_discount: "", min_order: "", usage_limit: "",
+    per_customer_limit: "1", ends_at: "" };
+  const [f, setF] = useState(empty);
+  const [errs, setErrs] = useState<Record<string, string>>({});
+  const refresh = () => qc.invalidateQueries({ queryKey: key("coupons") });
+  const create = useMutation({
+    mutationFn: () => post(path("/coupons"), { code: f.code, kind: f.kind, value: toInt(f.value) ?? 0,
+      max_discount: toInt(f.max_discount), min_order: toInt(f.min_order) ?? 0, usage_limit: toInt(f.usage_limit),
+      per_customer_limit: toInt(f.per_customer_limit), ends_at: f.ends_at ? `${f.ends_at}T23:59:59+03:00` : null }),
+    onSuccess: () => { setF(empty); setErrs({}); refresh(); toast(t("saved")); },
+    onError: (e) => { if (e instanceof ApiError) setErrs(e.fieldErrors()); toast(errorMessage(e, t("error")), "error"); },
+  });
+  const toggle = useMutation({ mutationFn: (c: Coupon) => patch(path(`/coupons/${c.id}`), { is_active: !c.is_active }), onSuccess: refresh });
+  const remove = useMutation({ mutationFn: (id: string) => del(path(`/coupons/${id}`)), onSuccess: refresh });
+  return (
+    <Card title={t("coupons")}>
+      {q.isError ? <ErrorBox error={q.error} /> : (
+        <>
+          <form className="mb-4 grid gap-2 sm:grid-cols-4" onSubmit={(e) => { e.preventDefault(); create.mutate(); }}>
+            <Field label={t("code")} error={errs.code}><Input dir="ltr" className="uppercase" value={f.code} onChange={(e) => setF({ ...f, code: e.target.value })} required /></Field>
+            <Field label={t("kind")}><Select value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value })}>
+              <option value="percent">{t("percent")}</option><option value="fixed">{t("fixed")}</option></Select></Field>
+            <Field label={t("value")} error={errs.value}><Input inputMode="numeric" value={f.value} onChange={(e) => setF({ ...f, value: e.target.value })} required /></Field>
+            <Field label={t("max_discount")}><Input inputMode="numeric" value={f.max_discount} onChange={(e) => setF({ ...f, max_discount: e.target.value })} /></Field>
+            <Field label={t("min_order")}><Input inputMode="numeric" value={f.min_order} onChange={(e) => setF({ ...f, min_order: e.target.value })} /></Field>
+            <Field label={t("usage_limit")}><Input inputMode="numeric" placeholder="∞" value={f.usage_limit} onChange={(e) => setF({ ...f, usage_limit: e.target.value })} /></Field>
+            <Field label={t("per_customer")}><Input inputMode="numeric" placeholder="∞" value={f.per_customer_limit} onChange={(e) => setF({ ...f, per_customer_limit: e.target.value })} /></Field>
+            <Field label={t("ends")} error={errs.ends_at}><Input type="date" value={f.ends_at} onChange={(e) => setF({ ...f, ends_at: e.target.value })} /></Field>
+            <div className="sm:col-span-4"><Button disabled={create.isPending}>+ {t("new_coupon")}</Button></div>
+          </form>
+          <Table empty={!q.data?.length} head={[t("code"), t("value"), t("min_order"), t("used"), t("ends"), t("active"), ""]}>
+            {q.data?.map((c) => (
+              <tr key={c.id}>
+                <td className="px-4 py-2 font-mono font-semibold" dir="ltr">{c.code}</td>
+                <td className="tabular px-4 py-2">{c.kind === "percent" ? `${c.value}%` : money(c.value)}{c.max_discount !== null && <span className="text-[12px] text-hint"> ≤ {money(c.max_discount)}</span>}</td>
+                <td className="tabular px-4 py-2">{c.min_order ? money(c.min_order) : "—"}</td>
+                <td className="tabular px-4 py-2">{c.used_count}{c.usage_limit !== null && ` / ${c.usage_limit}`}</td>
+                <td className="tabular px-4 py-2 text-[13px]">{c.ends_at ? new Date(c.ends_at).toLocaleDateString(lang === "ar" ? "ar-IQ" : "en-GB", { numberingSystem: "latn" }) : "—"}</td>
+                <td className="px-4 py-2"><Toggle checked={c.is_active} onChange={() => toggle.mutate(c)} label="" /></td>
+                <td className="px-4 py-2 text-end"><Button size="sm" variant="danger" onClick={async () => { if (await confirm({ title: t("are_you_sure"), danger: true })) remove.mutate(c.id); }}>{t("delete")}</Button></td>
+              </tr>
+            ))}
+          </Table>
+        </>
+      )}
+    </Card>
   );
 }

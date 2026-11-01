@@ -240,3 +240,51 @@ class OrderNotificationMessage(TenantModel):
                 fields=["order", "chat_id", "kind", "event_key"], name="order_msg_unique_event"
             )
         ]
+
+
+class CouponKind(models.TextChoices):
+    PERCENT = "percent"
+    FIXED = "fixed"
+
+
+class Coupon(TenantModel):
+    code = models.CharField(max_length=32)
+    kind = models.CharField(max_length=8, choices=CouponKind.choices)
+    value = models.PositiveIntegerField(help_text="Percent (1-100) or fixed amount in minor units")
+    max_discount = models.BigIntegerField(null=True, blank=True)
+    min_order = models.BigIntegerField(default=0)
+    starts_at = models.DateTimeField(null=True, blank=True)
+    ends_at = models.DateTimeField(null=True, blank=True)
+    usage_limit = models.PositiveIntegerField(null=True, blank=True)
+    per_customer_limit = models.PositiveIntegerField(null=True, blank=True, default=1)
+    used_count = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["business", "code"], name="coupon_code_unique"),
+            models.CheckConstraint(
+                condition=~Q(kind="percent") | (Q(value__gte=1) & Q(value__lte=100)),
+                name="coupon_percent_range",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return self.code
+
+    def discount_for(self, subtotal: int) -> int:
+        if self.kind == CouponKind.PERCENT:
+            amount = subtotal * self.value // 100
+            if self.max_discount is not None:
+                amount = min(amount, self.max_discount)
+        else:
+            amount = self.value
+        return max(0, min(amount, subtotal))
+
+
+class CouponRedemption(TenantModel):
+    coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE, related_name="redemptions")
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="coupon_redemption")
+    customer = models.ForeignKey("customers.Customer", on_delete=models.CASCADE, related_name="+")
+    amount = models.BigIntegerField()

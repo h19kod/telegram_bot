@@ -6,6 +6,7 @@ import pytest
 from django.urls import get_resolver
 
 from apps.chatbot.models import AIConversation, KnowledgeEntry
+from apps.orders.models import Coupon
 from apps.orders.services import cart as cart_svc
 from apps.orders.services.checkout import CheckoutInput, place_order
 from apps.platform_admin.models import SupportTicket
@@ -67,6 +68,9 @@ def build(b):
         "b-ticket": SupportTicket.objects.create(business=b, subject="x"),
         "knowledge": KnowledgeEntry.objects.create(business=b, topic="t", answer_ar="a"),
         "ai-conversation": AIConversation.objects.create(business=b, customer=c),
+        "coupon": Coupon.objects.create(
+            business=b, code=f"C{uuid.uuid4().hex[:8]}".upper(), kind="fixed", value=100
+        ),
     }
 
 
@@ -86,6 +90,7 @@ def test_all_router_basenames_covered():
         "b-ticket",
         "knowledge",
         "ai-conversation",
+        "coupon",
     }
     for _, _, basename in tenant.registry:
         assert basename in covered, f"{basename} missing from isolation matrix"

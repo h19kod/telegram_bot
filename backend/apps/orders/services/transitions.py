@@ -167,7 +167,10 @@ def transition(
         order.save(update_fields=fields)
 
         if to in (S.CANCELLED, S.REJECTED):
+            from apps.orders.services.coupons import release
+
             _restore_stock(order)
+            release(order)
         if to == S.DELIVERED:
             Customer.objects.filter(pk=order.customer_id).update(
                 total_spent=F("total_spent") + order.total

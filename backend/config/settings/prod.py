@@ -11,7 +11,9 @@ SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 X_FRAME_OPTIONS = "DENY"
-REFRESH_COOKIE_SECURE = env.bool("REFRESH_COOKIE_SECURE", default=True)  # false only for HTTP-only tests
+REFRESH_COOKIE_SECURE = env.bool(
+    "REFRESH_COOKIE_SECURE", default=True
+)  # false only for HTTP-only tests
 SECURE_REDIRECT_EXEMPT = [r"^healthz$", r"^readyz$"]
 STORAGES["staticfiles"] = {  # noqa: F405
     "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"

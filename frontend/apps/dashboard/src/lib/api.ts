@@ -186,3 +186,7 @@ export interface Overview { currency: string; total_orders: number; completed_or
 export interface SalesPoint { date: string; orders: number; sales: number }
 export interface TopProduct { product_id: string | null; name_ar: string; name_en: string;
   quantity: number; revenue: number }
+export interface Coupon { id: string; code: string; kind: "percent" | "fixed"; value: number;
+  max_discount: number | null; min_order: number; starts_at: string | null; ends_at: string | null;
+  usage_limit: number | null; per_customer_limit: number | null; used_count: number;
+  is_active: boolean }
