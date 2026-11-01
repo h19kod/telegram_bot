@@ -1,0 +1,4 @@
+# Upstreams are re-resolved at runtime so recreated containers (new IPs) keep working.
+resolver ${NGINX_RESOLVER} valid=10s ipv6=off;
+upstream api { zone upstream_api 64k; server api:8000 resolve; keepalive 32; }
+upstream bot { zone upstream_bot 64k; server bot:8081 resolve; }

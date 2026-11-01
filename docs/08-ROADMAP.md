@@ -8,7 +8,7 @@ Each phase ends only when its exit criteria pass. "Done" means tested, linted, d
 
 | Phase | Scope | Exit criteria |
 |-------|-------|---------------|
-| **1. Architecture & docs** ✅ in progress | docs/01–11 | Docs reviewed by owner |
+| **1. Architecture & docs** ✅ | docs/01–11 | Docs reviewed by owner |
 | **0. Foundation** (start of Phase 2) | Repo, git, Docker Compose (Postgres, Redis, MinIO, Mailpit), Django skeleton with settings split, `core` kernel (BaseModel, TenantModel, Money, phone, Arabic normalisation, errors, logging, health), CI (ruff, mypy, pytest), pre-commit, Makefile | `make up` starts all services; `/readyz` green; CI green |
 | **2. Backend core** | accounts, businesses, branches, hours, staff/roles/permissions, categories, products/options/images, customers, delivery zones, cart, checkout & order service, state machine, outbox, subscriptions/entitlements (data + enforcement), storefront & internal APIs, OpenAPI | All ORD/CAT/CRT/BUS/STF tests pass; tenant isolation matrix 100 %; concurrency tests for checkout & transitions; coverage ≥ 85 % on services |
 | **3. Telegram bot** | aiogram multi-bot service, polling (dev) + webhook (prod), full customer flow, staff notifications with action buttons, message syncing, customer status notifications, support relay, `/link`, i18n ar/en, throttling | Real order placed from Telegram on a test bot reaches the owner and moves through every status; duplicate-callback and stale-button tests pass |

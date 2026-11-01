@@ -1,0 +1,93 @@
+# 12 — QA & Security Report
+
+Date: 2026-11-01 · Scope: backend, bot service, Mini App, dashboard, deployment config.
+
+## 1. Automated test results
+
+| Suite | Result | Notes |
+|---|---|---|
+| Backend (pytest, real PostgreSQL 17 + Redis) | **128 passed, 0 failed** | 83 % line coverage overall; checkout 94 %, transitions 94 %, entitlements 97 %, AI 89 % |
+| Bot (pytest + real dispatcher, mocked Telegram/backend) | **5 passed** | Full ordering conversation, duplicate/stale staff buttons, reject reasons, throttling |
+| Frontend shared (Vitest) | **13 passed** | Money formatting, Iraqi phone hints, Arabic-Indic digits |
+| TypeScript (`tsc --noEmit`, strict) | Mini App ✓, Dashboard ✓ | Production builds succeed (110 KB / 125 KB gzipped JS) |
+| Ruff lint/format | ✓ backend, ✓ bot | |
+| `manage.py check --deploy` (prod settings) | ✓ | Only `security.W021` (HSTS preload) — deliberately deferred until the domain is stable |
+| `pip-audit` (runtime deps) | No known vulnerabilities | |
+| `npm audit --omit=dev` | 0 vulnerabilities | |
+
+### Workflows covered (requirement → tests)
+
+| Workflow | Where |
+|---|---|
+| Business registration / onboarding, cap per owner | `test_api_dashboard::test_onboarding_creates_business`, `test_security::test_business_creation_is_capped` |
+| Authentication (JWT, rotating refresh cookie + CSRF, reuse detection, phone login, 2FA) | `tests/test_api_auth.py` |
+| Tenant isolation (every route, introspected; FK injection; `business` injection) | `tests/test_tenant_isolation.py` |
+| Product create/update, price permission, images (WebP re-encode, fake image rejected) | `test_api_dashboard.py` |
+| Cart management (merge, required/single options, foreign options) | `apps/orders/tests/test_checkout.py` |
+| Order creation (re-pricing, snapshots, fees, minimums, hours across midnight, blocked/suspended) | `test_checkout.py` |
+| Duplicate order prevention (sequential + 8 parallel identical requests) | `test_checkout::test_idempotent_checkout`, `tests/test_concurrency.py` |
+| Stock under contention, gap-free order numbers under load | `tests/test_concurrency.py` |
+| Telegram notifications (outbox, 429 retry, give-up, no double send, HTML escaping) | `tests/test_services_extra.py`, `test_api_internal.py` |
+| Order status updates (state machine, permissions, idempotent/stale buttons, auto-reject) | `apps/orders/tests/test_transitions.py`, `test_api_internal.py` |
+| Customer tracking & cancel window; customers can't see others' orders | `test_api_storefront.py`, `test_transitions.py` |
+| Staff permissions (role matrix, delivery staff scope, owner protection) | `test_transitions.py`, `test_api_dashboard.py` |
+| Subscription restrictions (limits, overrides, metered quota + rollback refund, expiry/grace) | `apps/subscriptions/tests/test_entitlements.py`, `test_api_platform.py` |
+| AI assistant validation (invented products, wrong prices, cross-tenant ids, quota, refusal, timeouts, round limit, PII) | `apps/chatbot/tests/test_assistant.py` |
+
+### Manual end-to-end checks performed
+
+- Live cross-service: bot client → Django (HMAC with Arabic query strings) → session, search,
+  cart, order #1001, localized error.
+- Mini App in a browser (dev mode): browse → product with required size + extra (price updated to
+  10,000) → cart → checkout validation errors → Arabic-Indic phone → zone fee from server (12,000)
+  → order placed → tracking timeline. Verified in the database: phone normalised to
+  `+9647701234567`, snapshots and outbox entry.
+- Dashboard: login, overview, orders list; orders placed via the bot appeared live over WebSocket
+  (pending badge updated); accepted an order — history shows the actor and source.
+- Full container stack (Podman, production images, HTTP mode): all 8 services healthy; Nginx
+  routing, CSP per app, `/internal` blocked (404), SPA fallbacks, admin static via WhiteNoise;
+  bot → API signed internal call; register → create business → cookie refresh (200; 401 without
+  CSRF header); nightly backup produced; restore drill rolled data back correctly; API container
+  moved to a new IP and Nginx kept routing without restart.
+
+Issues found and fixed during deployment verification: host `.venv` leaking into images
+(`.dockerignore`), OCI images dropping `HEALTHCHECK` (declared in compose), SELinux bind-mount
+labels (`:Z`), duplicate Nginx proxy directives, BusyBox `wget` health check, stale upstream IPs
+after container recreation (runtime DNS re-resolution), `Secure` cookie flag now configurable.
+
+## 2. Security audit
+
+| Area | Status | Evidence / control |
+|---|---|---|
+| Authentication | ✓ | Argon2, ≥10-char validators, generic errors, login throttling, TOTP (replay-protected), refresh rotation + blacklist, password change revokes sessions |
+| Authorization | ✓ | Permission catalog enforced in views **and** services; owner-role protections; delivery scope |
+| IDOR / tenant leakage | ✓ | 404 for foreign ids on every tenant route (introspected test), tenant-scoped FK fields, server-injected `business` |
+| SQL injection | ✓ | ORM only; no raw SQL |
+| XSS | ✓ | React escaping, no `dangerouslySetInnerHTML`; Telegram HTML fully escaped (test); CSP per app in Nginx |
+| CSRF | ✓ | API uses bearer tokens; cookie-auth refresh needs double-submit header + SameSite=Strict |
+| Rate limiting | ✓ | Nginx zones (api/auth/webhooks), DRF throttles (login, store, checkout), bot throttle (Redis) |
+| Secret exposure | ✓ | No secrets in git (`.env*` ignored, CI gitleaks); bot tokens Fernet-encrypted, write-only, scrubbed from logs |
+| Telegram initData | ✓ | Official HMAC algorithm, max age, bound to the business's bot; tampered/expired/wrong-bot tests |
+| Webhook spoofing | ✓ | Per-bot secret token (constant-time compare), opaque bot id in URL |
+| Internal API | ✓ | HMAC + timestamp + nonce replay cache; not routed by Nginx; **new:** refuses proxied requests |
+| File uploads | ✓ | Pillow decode/verify, size and pixel limits, EXIF stripped, WebP re-encode, random names |
+| Export injection | ✓ | CSV/XLSX formula neutralisation (test) |
+| AI prompt injection | ✓ | Read-only tools, backend validation, server-rendered totals, explicit system rules |
+| Dependencies | ✓ | pip-audit / npm audit clean; lockfiles committed |
+
+Fixes made during the audit: proxied-request guard for `/internal/`, per-owner business creation
+cap, redis-py 8 socket-timeout incompatibility in the WebSocket layer (found by live testing),
+quote endpoint no longer requires contact data.
+
+## 3. Remaining risks and open items
+
+| # | Item | Impact | Plan |
+|---|---|---|---|
+| 1 | PostgreSQL Row-Level Security not enabled (defence-in-depth layer from 07-SECURITY) | Low — application-level isolation is fully tested | Add RLS policies with a per-transaction `app.business_id` in a hardening release |
+| 2 | Not tested against real Telegram servers (no bot token available in this environment) | Medium | First staging step: connect a BotFather test bot and run the manual checklist (DEVELOPMENT.md §4) |
+| 3 | AI assistant not evaluated with real model output on an Iraqi-Arabic dataset (needs API key) | Medium | Build the ≥150-message eval set before enabling for customers |
+| 4 | No load test yet (k6/Locust) | Medium | Run before launch against staging; concurrency correctness is already tested |
+| 5 | Coupons (DSC-2), multi-branch UI, Playwright E2E suite, Lighthouse audit | Feature gaps | Backlog (08-ROADMAP) |
+| 6 | OpenAPI schema incomplete for APIView endpoints (storefront/internal) | Low (docs only) | Add `extend_schema` serializers; generate TS types from it |
+| 7 | WAL archiving (PITR) not configured; daily dumps only (RPO 24 h vs target 15 min) | Medium | Add wal-g to the backup service |
+| 8 | HSTS preload not enabled | Low | Enable after the domain is stable |

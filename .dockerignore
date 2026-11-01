@@ -1,0 +1,17 @@
+.git
+**/.venv
+**/node_modules
+**/dist
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/htmlcov
+**/.coverage
+backend/media
+backend/staticfiles
+.env
+.env.*
+!.env.example
+backups
+.claude

@@ -1,0 +1,11 @@
+# HTTP-only mode (local verification / behind an external TLS terminator).
+server {
+    listen 80;
+    server_name ${APP_DOMAIN};
+    include /etc/nginx/snippets/dashboard.conf;
+}
+server {
+    listen 80;
+    server_name ${SHOP_DOMAIN};
+    include /etc/nginx/snippets/miniapp.conf;
+}

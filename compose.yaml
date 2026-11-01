@@ -1,0 +1,142 @@
+# Production-like stack. Secrets come from .env (never committed); see docs/ENVIRONMENT.md.
+name: sop
+
+x-backend: &backend
+  image: ${REGISTRY:-localhost}/sop-backend:${TAG:-latest}
+  env_file: ${ENV_FILE:-.env}
+  environment:
+    DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+    CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/2
+    DJANGO_SETTINGS_MODULE: config.settings.prod
+  volumes:
+    - media:/app/media
+  restart: unless-stopped
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis: { condition: service_healthy }
+
+services:
+  postgres:
+    image: docker.io/library/postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: docker.io/library/redis:7-alpine
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $${REDIS_PASSWORD} --no-auth-warning ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    restart: unless-stopped
+
+  # One-shot: migrations + reference data. Run before (re)starting the app on every release.
+  release:
+    <<: *backend
+    command: ["sh", "-c", "python manage.py migrate --noinput && python manage.py seed_reference_data"]
+    restart: "no"
+    profiles: ["release"]
+
+  api:
+    <<: *backend
+    build: { context: ., dockerfile: infra/docker/backend.Dockerfile }
+    # Declared here too: OCI images (Podman's default) drop the Dockerfile HEALTHCHECK.
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  worker:
+    <<: *backend
+    command: ["celery", "-A", "config", "worker", "-l", "INFO", "-Q", "telegram,default,media,ai,reports,celery",
+              "--concurrency", "4", "--max-tasks-per-child", "500"]
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config inspect ping --timeout 10 | grep -q pong"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+
+  beat:
+    <<: *backend
+    command: ["celery", "-A", "config", "beat", "-l", "INFO", "--schedule", "/tmp/celerybeat-schedule"]
+    healthcheck:
+      disable: true
+
+  bot:
+    build: { context: ., dockerfile: infra/docker/bot.Dockerfile }
+    image: ${REGISTRY:-localhost}/sop-bot:${TAG:-latest}
+    env_file: ${ENV_FILE:-.env}
+    environment:
+      BOT_MODE: ${BOT_MODE:-webhook}
+      BACKEND_INTERNAL_URL: http://api:8000
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      BOT_REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/1
+    depends_on:
+      api: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD-SHELL", "[ \"$$BOT_MODE\" != webhook ] || curl -fsS http://127.0.0.1:8081/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  web:
+    build: { context: ., dockerfile: infra/docker/web.Dockerfile }
+    image: ${REGISTRY:-localhost}/sop-web:${TAG:-latest}
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+      SHOP_DOMAIN: ${SHOP_DOMAIN}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    volumes:
+      - media:/srv/media:ro
+    depends_on:
+      api: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- --header 'Host: ${APP_DOMAIN}' http://127.0.0.1/healthz | grep -q ok"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # Nightly logical backups to ./backups (sync that directory off-site; see BACKUP_RESTORE.md).
+  backup:
+    image: docker.io/library/postgres:17-alpine
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      # :Z relabels bind mounts for SELinux (Fedora); harmless elsewhere.
+      - ./backups:/backups:Z
+      - ./infra/scripts/backup-loop.sh:/backup-loop.sh:ro,Z
+      - media:/media:ro
+    entrypoint: ["sh", "/backup-loop.sh"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  media:

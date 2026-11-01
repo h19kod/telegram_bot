@@ -1,0 +1,22 @@
+# TLS overlay: docker compose -f compose.yaml -f compose.prod.yaml up -d
+services:
+  web:
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/templates-tls:/etc/nginx/templates:ro
+      - letsencrypt:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
+
+  certbot:
+    image: docker.io/certbot/certbot:v2.11.0
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    entrypoint: ["sh", "-c", "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h; done"]
+    restart: unless-stopped
+
+volumes:
+  letsencrypt:
+  certbot-www:
