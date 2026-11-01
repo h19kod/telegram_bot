@@ -1,0 +1,85 @@
+"""Initial features and plans. Values are seeded once and then edited as data by platform admins."""
+
+FEATURES = [
+    # key, value_type, default, is_metered, reset_period, description
+    ("max_products", "int", 20, False, "none", "Maximum active products"),
+    ("max_categories", "int", 5, False, "none", "Maximum categories"),
+    ("max_staff", "int", 2, False, "none", "Maximum staff members"),
+    ("max_branches", "int", 1, False, "none", "Maximum branches"),
+    ("max_orders_per_month", "int", 100, True, "month", "Orders per calendar month"),
+    ("max_images_per_product", "int", 1, False, "none", "Images per product"),
+    ("ai_assistant", "bool", False, False, "none", "AI ordering assistant"),
+    ("ai_messages_per_month", "int", 0, True, "month", "AI messages per month"),
+    ("analytics_export", "bool", False, False, "none", "Export reports"),
+    ("custom_bot", "bool", False, False, "none", "Connect your own Telegram bot"),
+    ("coupons", "bool", False, False, "none", "Coupons and promotions"),
+    ("remove_branding", "bool", False, False, "none", "Remove platform branding"),
+]
+
+# None = unlimited
+PLANS = {
+    "free": {
+        "name_ar": "مجاني",
+        "name_en": "Free",
+        "price": 0,
+        "default": True,
+        "trial": 0,
+        "values": {},
+    },
+    "basic": {
+        "name_ar": "أساسي",
+        "name_en": "Basic",
+        "price": 25000,
+        "default": False,
+        "trial": 14,
+        "values": {
+            "max_products": 100,
+            "max_categories": 20,
+            "max_staff": 5,
+            "max_orders_per_month": 1000,
+            "max_images_per_product": 3,
+            "custom_bot": True,
+        },
+    },
+    "pro": {
+        "name_ar": "احترافي",
+        "name_en": "Professional",
+        "price": 60000,
+        "default": False,
+        "trial": 14,
+        "values": {
+            "max_products": 500,
+            "max_categories": 100,
+            "max_staff": 20,
+            "max_branches": 3,
+            "max_orders_per_month": 10000,
+            "max_images_per_product": 6,
+            "ai_assistant": True,
+            "ai_messages_per_month": 3000,
+            "analytics_export": True,
+            "custom_bot": True,
+            "coupons": True,
+        },
+    },
+    "enterprise": {
+        "name_ar": "مؤسسات",
+        "name_en": "Enterprise",
+        "price": 150000,
+        "default": False,
+        "trial": 0,
+        "values": {
+            "max_products": None,
+            "max_categories": None,
+            "max_staff": None,
+            "max_branches": None,
+            "max_orders_per_month": None,
+            "max_images_per_product": 10,
+            "ai_assistant": True,
+            "ai_messages_per_month": 20000,
+            "analytics_export": True,
+            "custom_bot": True,
+            "coupons": True,
+            "remove_branding": True,
+        },
+    },
+}
