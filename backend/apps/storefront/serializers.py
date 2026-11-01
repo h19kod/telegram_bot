@@ -142,6 +142,12 @@ class StoreZoneSerializer(serializers.ModelSerializer):
         ]
 
 
+def _ai_entitled(business: Business) -> bool:
+    from apps.subscriptions.services import has_feature
+
+    return has_feature(business.id, "ai_assistant")
+
+
 def business_info(business: Business, branch: Branch) -> dict[str, Any]:
     from core.models import localized
     from core.serializers import current_lang
@@ -178,7 +184,7 @@ def business_info(business: Business, branch: Branch) -> dict[str, Any]:
         "allow_order_notes": cfg.allow_order_notes,
         "customer_cancel_window_min": cfg.customer_cancel_window_min,
         "welcome_message": localized(cfg, "welcome_message", lang),
-        "ai_enabled": cfg.ai_enabled,
+        "ai_enabled": cfg.ai_enabled and _ai_entitled(business),
         "address": branch.address,
         "hours": hours,
     }

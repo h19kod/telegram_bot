@@ -441,3 +441,24 @@ class StaffLinkView(InternalView):
         return Response(
             {"linked": True, "name": user.full_name or str(user), "businesses": businesses}
         )
+
+
+class AIMessageView(CustomerScoped):
+    def post(self, request: Request, bot_id: uuid.UUID, tg_id: int) -> Response:
+        from apps.chatbot.services import handle_message
+
+        business, customer = self.ctx(request, bot_id, tg_id)
+        text = serializers.CharField(max_length=1000, min_length=1).run_validation(
+            request.data.get("text")
+        )
+        return Response(handle_message(business, customer, text))
+
+
+class AIConfirmView(CustomerScoped):
+    def post(
+        self, request: Request, bot_id: uuid.UUID, tg_id: int, proposal_id: uuid.UUID
+    ) -> Response:
+        from apps.chatbot.services import confirm_proposal
+
+        business, customer = self.ctx(request, bot_id, tg_id)
+        return Response(confirm_proposal(business, customer, proposal_id))

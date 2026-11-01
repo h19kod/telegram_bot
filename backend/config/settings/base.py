@@ -272,10 +272,12 @@ MAX_OPEN_ORDERS_PER_CUSTOMER = 3
 
 # AI assistant
 AI_PROVIDER = env("AI_PROVIDER", default="anthropic")
-AI_MODEL = env("AI_MODEL", default="claude-haiku-5-5")
+AI_MODEL = env("AI_MODEL", default="claude-opus-5-5")
+AI_EFFORT = env("AI_EFFORT", default="low")  # chat workload: low effort keeps latency and cost down
 AI_API_KEY = env("AI_API_KEY", default="")
-AI_TIMEOUT_SECONDS = env.float("AI_TIMEOUT_SECONDS", default=20.0)
-AI_MAX_OUTPUT_TOKENS = env.int("AI_MAX_OUTPUT_TOKENS", default=800)
+AI_TIMEOUT_SECONDS = env.float("AI_TIMEOUT_SECONDS", default=45.0)
+AI_MAX_OUTPUT_TOKENS = env.int("AI_MAX_OUTPUT_TOKENS", default=16000)
+AI_HISTORY_MESSAGES = 12
 AI_MAX_TOOL_ROUNDS = 4
 
 # --- Logging --------------------------------------------------------------

@@ -30,6 +30,7 @@ dependencies = [
     "sentry-sdk[django]>=2.0",
     "gunicorn>=23",
     "uvicorn[standard]>=0.30",
+    "anthropic>=0.80",
 ]
 
 [dependency-groups]

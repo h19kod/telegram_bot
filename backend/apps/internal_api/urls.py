@@ -21,6 +21,8 @@ urlpatterns = [
     path(c + "orders/<uuid:order_id>/cancel", v.OrderCancelView.as_view()),
     path(c + "me", v.CustomerMeView.as_view()),
     path(c + "support", v.SupportView.as_view()),
+    path(c + "ai/message", v.AIMessageView.as_view()),
+    path(c + "ai/proposals/<uuid:proposal_id>/confirm", v.AIConfirmView.as_view()),
     path("bots/<uuid:bot_id>/staff/transition", v.StaffTransitionView.as_view()),
     path("bots/<uuid:bot_id>/staff/link", v.StaffLinkView.as_view()),
 ]
