@@ -98,8 +98,13 @@ class MyBusinessesView(APIView):
 
     @extend_schema(request=BusinessCreateSerializer, responses=BusinessSerializer)
     def post(self, request: Request) -> Response:
+        from django.conf import settings
+
         s = BusinessCreateSerializer(data=request.data)
         s.is_valid(raise_exception=True)
+        owned = Business.objects.filter(owner=request.user).count()
+        if not request.user.is_platform_admin and owned >= settings.MAX_BUSINESSES_PER_OWNER:
+            raise DomainError("plan_limit_exceeded", {"feature": "businesses_per_owner"})
         business = services.create_business(request.user, **s.validated_data)
         return Response(BusinessSerializer(business).data, status=201)
 

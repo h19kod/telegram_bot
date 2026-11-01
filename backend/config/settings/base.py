@@ -49,6 +49,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "core.middleware.RequestIdMiddleware",
+    "core.middleware.InternalApiGuardMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -331,3 +332,5 @@ EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=False)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@localhost")
 DASHBOARD_BASE_URL = env("DASHBOARD_BASE_URL", default="http://localhost:5174")
 PLATFORM_ADMIN_REQUIRE_2FA = env.bool("PLATFORM_ADMIN_REQUIRE_2FA", default=True)
+MAX_BUSINESSES_PER_OWNER = env.int("MAX_BUSINESSES_PER_OWNER", default=3)
+SILENCED_SYSTEM_CHECKS = ["drf_spectacular.W001", "drf_spectacular.W002"]

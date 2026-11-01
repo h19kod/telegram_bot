@@ -42,3 +42,22 @@ class RequestIdMiddleware:
             _business_id.reset(btoken)
         response["X-Request-ID"] = rid
         return response
+
+
+class InternalApiGuardMiddleware:
+    """Defence in depth: /internal/ is for the bot service on the private network only.
+    Requests that came through the public reverse proxy carry forwarding headers → 404."""
+
+    PROXY_HEADERS = ("HTTP_X_FORWARDED_FOR", "HTTP_X_REAL_IP", "HTTP_FORWARDED")
+
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]):
+        self.get_response = get_response
+
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        if request.path.startswith("/internal/") and any(
+            h in request.META for h in self.PROXY_HEADERS
+        ):
+            from django.http import HttpResponseNotFound
+
+            return HttpResponseNotFound()
+        return self.get_response(request)
