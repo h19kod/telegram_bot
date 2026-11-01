@@ -65,7 +65,8 @@ def test_full_delivery_lifecycle():
     order.refresh_from_db()
     assert order.status == S.DELIVERED
     assert order.version == 6
-    assert order.delivered_at and order.confirmed_at
+    assert order.delivered_at
+    assert order.confirmed_at
     assert order.events.count() == 6
     assert NotificationOutbox.objects.filter(event_type="order.status_changed").count() == 5
     order.customer.refresh_from_db()

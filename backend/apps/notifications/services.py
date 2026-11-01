@@ -113,7 +113,37 @@ def notify_customer(order: Order, bot: TelegramBot, api: BotAPI, event_key: str)
     _record(order, bot, chat_id, mid or 0, NotificationKind.CUSTOMER, event_key)
 
 
+def handle_support(event: NotificationOutbox) -> None:
+    from html import escape
+
+    from apps.businesses.models import Business
+    from apps.customers.models import Customer
+
+    business = Business.objects.select_related("settings").filter(id=event.business_id).first()
+    customer = Customer.objects.filter(id=event.payload.get("customer_id")).first()
+    bot = bot_for_business(event.business_id) if business else None
+    if not (business and customer and bot):
+        return
+    api = BotAPI(bot.token)
+    contact = f'<a href="tg://user?id={customer.telegram_user_id}">{escape(customer.display_name or "زبون")}</a>'
+    if customer.telegram_username:
+        contact += f" (@{escape(customer.telegram_username)})"
+    if customer.phone:
+        contact += f" — <code>{escape(customer.phone)}</code>"
+    text = f"💬 <b>رسالة دعم / Support</b>\n{contact}\n\n{escape(event.payload.get('text', ''))}"
+    chats = list(business.settings.notification_chat_ids or [])
+    for m in members_with_permission(business.id, "customers.view"):
+        tg = TelegramAccount.objects.filter(user_id=m.user_id).first()
+        if tg:
+            chats.append(tg.telegram_user_id)
+    for chat_id in dict.fromkeys(chats):
+        _send(api, chat_id, text, None)
+
+
 def handle(event: NotificationOutbox) -> None:
+    if event.event_type == "support.message":
+        handle_support(event)
+        return
     order_id = event.payload.get("order_id")
     order = (
         Order.objects.select_related("business__settings", "customer").filter(id=order_id).first()
@@ -172,3 +202,27 @@ def drain(batch: int = 50) -> int:
             event.save()
             processed += 1
     return processed
+
+
+def staff_test_message(business: Any, user: Any) -> int:
+    """Send a test message to every staff chat; returns how many chats received it."""
+    from apps.accounts.models import TelegramAccount
+    from core.errors import DomainError
+
+    bot = bot_for_business(business.id)
+    if bot is None:
+        raise DomainError("telegram_error", {"reason": "no bot"}, 400)
+    api = BotAPI(bot.token)
+    chats = list(business.settings.notification_chat_ids or [])
+    for m in members_with_permission(business.id, "orders.receive_notifications"):
+        tg = TelegramAccount.objects.filter(user_id=m.user_id).first()
+        if tg:
+            chats.append(tg.telegram_user_id)
+    sent = 0
+    for chat_id in dict.fromkeys(chats):
+        try:
+            api.send_message(chat_id, "✅ رسالة تجريبية — الإشعارات تشتغل.\n✅ Test notification.")
+            sent += 1
+        except TelegramAPIError:
+            continue
+    return sent

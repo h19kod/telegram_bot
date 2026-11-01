@@ -31,16 +31,16 @@ def shop():
 
 
 def delivery_input(zone, **kw):
-    data = dict(
-        fulfilment="delivery",
-        customer_name="علي حسين",
-        customer_phone="07701234567",
-        idempotency_key=uuid.uuid4(),
-        zone_id=zone.id,
-        address_area="الكرادة داخل",
-        address_landmark="قرب جامع",
-        channel="bot",
-    )
+    data = {
+        "fulfilment": "delivery",
+        "customer_name": "علي حسين",
+        "customer_phone": "07701234567",
+        "idempotency_key": uuid.uuid4(),
+        "zone_id": zone.id,
+        "address_area": "الكرادة داخل",
+        "address_landmark": "قرب جامع",
+        "channel": "bot",
+    }
     data.update(kw)
     return CheckoutInput(**data)
 
