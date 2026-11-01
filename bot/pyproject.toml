@@ -1,0 +1,36 @@
+[project]
+name = "sop-bot"
+version = "0.1.0"
+description = "Smart Ordering Platform — Telegram bot service (aiogram 3, multi-bot)"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "aiogram>=3.15,<4",
+    "httpx>=0.27",
+    "redis>=5.0",
+    "aiohttp>=3.10",
+    "sentry-sdk>=2.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "respx>=0.21",
+    "ruff>=0.7",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "C4", "SIM", "RUF", "ASYNC"]
+ignore = ["S101", "E501", "RUF001", "RUF002", "RUF003", "RUF012", "S110"]
