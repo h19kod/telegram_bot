@@ -6,7 +6,7 @@ Date: 2026-11-01 · Scope: backend, bot service, Mini App, dashboard, deployment
 
 | Suite | Result | Notes |
 |---|---|---|
-| Backend (pytest, real PostgreSQL 17 + Redis) | **151 passed, 0 failed** (2026-11-02) | 83 % line coverage overall; checkout 94 %, transitions 94 %, entitlements 97 %, AI 89 % |
+| Backend (pytest, real PostgreSQL 17 + Redis) | **166 passed, 0 failed** (2026-11-02) | 85 % line coverage overall, every `services.py` ≥ 85 % (staff/customers 100 %, accounts 97 %, notifications 94 %); checkout 94 %, transitions 94 %, entitlements 97 %, AI 89 % |
 | Bot (pytest + real dispatcher, mocked Telegram/backend) | **5 passed** | Full ordering conversation, duplicate/stale staff buttons, reject reasons, throttling |
 | End-to-end (Playwright, real backend + both apps) | **7 passed** | Mini App order → dashboard accept → customer sees status; axe WCAG 2.1 AA scan of 7 Mini App + 6 dashboard screens in light and dark theme: 0 violations (`make e2e`) |
 | Frontend shared (Vitest) | **13 passed** | Money formatting, Iraqi phone hints, Arabic-Indic digits |
