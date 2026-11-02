@@ -321,6 +321,7 @@ class BranchSerializer(serializers.ModelSerializer):
             "is_temporarily_closed",
             "accepts_delivery",
             "accepts_pickup",
+            "accepts_dine_in",
             "hours",
             "is_open_now",
         ]
@@ -418,7 +419,10 @@ class QRCodeView(APIView):
     permission_classes = [IsBusinessMember]
 
     @extend_schema(
-        parameters=[OpenApiParameter("type", str, enum=["svg", "png"], default="svg")],
+        parameters=[
+            OpenApiParameter("type", str, enum=["svg", "png"], default="svg"),
+            OpenApiParameter("table", str, description="Table number (dine-in QR), 1-10 A-Z/0-9"),
+        ],
         responses={
             (200, "image/svg+xml"): OpenApiTypes.BINARY,
             (200, "image/png"): OpenApiTypes.BINARY,
@@ -426,12 +430,18 @@ class QRCodeView(APIView):
     )
     def get(self, request: Request, business_id: Any) -> HttpResponse:
         require(request, "settings.edit")
-        link = services.store_link(request.business)
+        from apps.orders.services.checkout import TABLE_LABEL
+
+        table = request.query_params.get("table", "")
+        if table and not TABLE_LABEL.fullmatch(table):
+            raise DomainError("table_required", status_code=400)
+        link = services.store_link(request.business, table)
         if link is None:
             raise DomainError("business_unavailable")
         kind = "png" if request.query_params.get("type") == "png" else "svg"
         body, ctype = services.qr_code(link, kind)
         resp = HttpResponse(body, content_type=ctype)
-        resp["Content-Disposition"] = f'inline; filename="{request.business.slug}-qr.{kind}"'
+        name = f"{request.business.slug}-table-{table}" if table else f"{request.business.slug}"
+        resp["Content-Disposition"] = f'inline; filename="{name}-qr.{kind}"'
         resp["Cache-Control"] = "private, max-age=300"
         return resp

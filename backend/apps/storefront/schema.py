@@ -60,6 +60,7 @@ class StoreInfoSerializer(serializers.Serializer):
     rating_count = serializers.IntegerField()
     accepts_delivery = serializers.BooleanField()
     accepts_pickup = serializers.BooleanField()
+    accepts_dine_in = serializers.BooleanField()
     min_order_amount = serializers.IntegerField(help_text="Minor units")
     payment_methods = serializers.ListField(child=serializers.CharField())
     allow_order_notes = serializers.BooleanField()

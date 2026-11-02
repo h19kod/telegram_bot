@@ -61,9 +61,10 @@ export function OrdersPage() {
   );
 }
 
-const FLOW: Record<"delivery" | "pickup", OrderStatus[]> = {
+const FLOW: Record<Order["fulfilment"], OrderStatus[]> = {
   delivery: ["pending", "confirmed", "preparing", "ready", "out_for_delivery", "delivered"],
   pickup: ["pending", "confirmed", "preparing", "ready", "delivered"],
+  dine_in: ["pending", "confirmed", "preparing", "ready", "delivered"],
 };
 
 function Timeline({ order }: { order: Order }) {
@@ -145,6 +146,9 @@ export function OrderDetailPage() {
               <span>{t("total")}</span><span className="tabular">{money(o.total)}</span></div>
           </div>
         </Card>
+        {o.fulfilment === "dine_in" && (
+          <Card className="p-4 text-[14px] font-semibold">🍽 {t("table_n", { n: o.table_label })}</Card>
+        )}
         {o.fulfilment === "delivery" && (
           <Card className="p-4 text-[14px]">
             <p className="font-semibold">📍 {o.zone_name_snapshot} — {o.address_area}</p>

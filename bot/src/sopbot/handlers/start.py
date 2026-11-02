@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import time
 
 from aiogram import F, Router
 from aiogram.filters import Command, CommandObject, CommandStart
@@ -14,6 +15,7 @@ from sopbot.texts import t
 
 router = Router(name="start")
 SLUG = re.compile(r"^[a-z0-9][a-z0-9_]{1,48}[a-z0-9]$")
+TABLE = re.compile(r"^([a-z0-9_]*)-t([A-Za-z0-9]{1,10})$")  # "-t5" (own bot), "slug-t5" (shared)
 
 
 @router.message(CommandStart())
@@ -23,11 +25,23 @@ async def start(message: Message, command: CommandObject, ctx: Ctx, state: FSMCo
     if payload.startswith("link_"):
         await _link(message, ctx, payload[5:])
         return
+    table = ""
+    if m := TABLE.match(payload):
+        payload, table = m.group(1), m.group(2)
     business = payload if payload and SLUG.match(payload) else None
     if ctx.bot.is_shared and not business and not ctx.business:
         await message.answer(t("choose_business", ctx.lang))
         return
     data = await ensure_session(ctx, message.from_user, business)
+    if table and data["business"].get("accepts_dine_in"):
+        await ctx.prefs.update(ctx.bot_id, ctx.tg_id, table=table, table_at=int(time.time()))
+        if url := data.get("mini_app_url"):
+            data = {**data, "mini_app_url": f"{url}&table={table}"}
+        await send_welcome(message, ctx, data)
+        await message.answer(t("at_table", ctx.lang, n=table))
+        return
+    if payload or not table:  # a plain /start leaves the table (if any) behind
+        await ctx.prefs.update(ctx.bot_id, ctx.tg_id, table="")
     await send_welcome(message, ctx, data)
 
 

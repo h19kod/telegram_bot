@@ -74,6 +74,11 @@ T: dict[str, dict[str, str]] = {
         "Or tap “Share my number” if it is your Telegram number.",
     },
     "phone_verified": {"ar": "✅ تم تأكيد رقمك", "en": "✅ Your number is confirmed"},
+    "at_table": {
+        "ar": "🍽 أهلاً بيك على طاولة {n}! اطلب من المنيو وراح يوصلك الطلب للطاولة.",
+        "en": "🍽 Welcome to table {n}! Order from the menu and we'll bring it to your table.",
+    },
+    "summary_fulfilment_dine_in": {"ar": "🍽 على الطاولة {n}", "en": "🍽 At table {n}"},
     "rate_order": {"ar": "⭐ شلون كان طلبك؟ قيّمنا:", "en": "⭐ How was your order? Rate us:"},
     "thanks_rating": {"ar": "شكراً على تقييمك 🌹", "en": "Thanks for your rating 🌹"},
     "your_rating": {"ar": "تقييمك", "en": "Your rating"},

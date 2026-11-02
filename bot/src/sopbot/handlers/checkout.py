@@ -4,6 +4,7 @@ returns it — never before."""
 from __future__ import annotations
 
 import contextlib
+import time
 import uuid
 from html import escape
 from typing import Any
@@ -36,6 +37,7 @@ from sopbot.keyboards import (
 from sopbot.texts import money, t
 
 router = Router(name="checkout")
+TABLE_TTL = 3 * 60 * 60  # a table QR is good for one visit
 
 
 class Checkout(StatesGroup):
@@ -74,12 +76,16 @@ async def begin(cb: CallbackQuery, ctx: Ctx, state: FSMContext) -> None:
         return
     session = await ensure_session(ctx, cb.from_user)
     customer, info = session["customer"], session["business"]
+    prefs = await ctx.prefs.get(ctx.bot_id, ctx.tg_id)
+    fresh = time.time() - prefs.get("table_at", 0) < TABLE_TTL
+    table = prefs.get("table", "") if fresh and info.get("accepts_dine_in") else ""
     await state.set_state(Checkout.name)
     await state.update_data(
         co={
             "known_name": customer.get("full_name") or "",
             "known_phone": customer.get("phone") or "",
             "known_verified": bool(customer.get("phone_verified")),
+            "table": table,
             "info": {
                 "verify_phone": bool(info.get("phone_verification_required")),
                 "accepts_delivery": info["accepts_delivery"],
@@ -112,6 +118,10 @@ async def name_text(message: Message, ctx: Ctx, state: FSMContext) -> None:
 
 async def _after_name(message: Message, ctx: Ctx, state: FSMContext, name: str) -> None:
     co = await _save(state, customer_name=name)
+    if co.get("table"):  # at a table: no phone, no address
+        await _save(state, fulfilment="dine_in", table_label=co["table"], customer_phone="")
+        await _ask_notes_or_summary(message, ctx, state)
+        return
     await state.set_state(Checkout.phone)
     await message.answer(t("ask_phone", ctx.lang), reply_markup=phone_kb(ctx.lang))
     if co.get("known_phone"):
@@ -311,6 +321,7 @@ def payload(co: dict[str, Any]) -> dict[str, Any]:
         "latitude",
         "longitude",
         "notes",
+        "table_label",
     ]
     return {k: co[k] for k in keys if co.get(k) not in (None, "")}
 
@@ -334,7 +345,8 @@ async def _summary(message: Message, ctx: Ctx, state: FSMContext) -> None:
             f"{money(line['line_total'], cur, ctx.lang)}"
         )
     lines.append("")
-    lines.append(f"👤 {escape(co['customer_name'])}  📞 {escape(co['customer_phone'])}")
+    phone = f"  📞 {escape(co['customer_phone'])}" if co.get("customer_phone") else ""
+    lines.append(f"👤 {escape(co['customer_name'])}{phone}")
     if co["fulfilment"] == "delivery":
         zone = q["zone"]["name_en" if ctx.lang == "en" and q["zone"]["name_en"] else "name_ar"]
         lines.append(
@@ -348,6 +360,8 @@ async def _summary(message: Message, ctx: Ctx, state: FSMContext) -> None:
         if co.get("address_landmark"):
             lines.append(t("summary_landmark", ctx.lang, v=escape(co["address_landmark"])))
         lines.append(f"{t('delivery_fee', ctx.lang)}: {money(q['delivery_fee'], cur, ctx.lang)}")
+    elif co["fulfilment"] == "dine_in":
+        lines.append(t("summary_fulfilment_dine_in", ctx.lang, n=escape(co["table_label"])))
     else:
         lines.append(t("summary_fulfilment_pickup", ctx.lang))
     if co.get("notes"):

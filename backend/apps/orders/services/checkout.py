@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import uuid
 from dataclasses import dataclass, field
 from decimal import Decimal
@@ -39,6 +40,8 @@ from apps.subscriptions import services as entitlements
 from core.errors import DomainError, message_for
 from core.phone import InvalidPhoneNumber, normalize_phone
 
+TABLE_LABEL = re.compile(r"[A-Za-z0-9]{1,10}")
+
 
 @dataclass
 class CheckoutInput:
@@ -57,6 +60,7 @@ class CheckoutInput:
     notes: str = ""
     payment_method: str = ""
     coupon_code: str = ""
+    table_label: str = ""
 
 
 @dataclass
@@ -104,18 +108,31 @@ def _validate(
         raise DomainError("fulfilment_unavailable")
     if data.fulfilment == Fulfilment.PICKUP and not branch.accepts_pickup:
         raise DomainError("fulfilment_unavailable")
+    if data.fulfilment == Fulfilment.DINE_IN:
+        if not branch.accepts_dine_in:
+            raise DomainError("fulfilment_unavailable")
+        if not TABLE_LABEL.fullmatch(data.table_label or ""):
+            raise DomainError("table_required", status_code=400)
 
     phone = ""
     if not for_quote:  # quotes price the cart before contact details are entered
         name = data.customer_name.strip()
         if not 2 <= len(name) <= 150:
             raise DomainError("validation_error", {"customer_name": ["2-150 characters"]}, 400)
+        # At a table the customer is in the shop: the phone is optional and not verified.
+        dine_in = data.fulfilment == Fulfilment.DINE_IN
         try:
-            phone = normalize_phone(data.customer_phone)
+            phone = (
+                normalize_phone(data.customer_phone)
+                if data.customer_phone.strip() or not dine_in
+                else ""
+            )
         except InvalidPhoneNumber:
             raise DomainError("invalid_phone", status_code=400) from None
-        if customers.verification_required(business) and not customers.is_phone_verified(
-            customer, phone
+        if (
+            not dine_in
+            and customers.verification_required(business)
+            and not customers.is_phone_verified(customer, phone)
         ):
             raise DomainError(
                 "phone_not_verified", {"customer_phone": [message_for("phone_not_verified")]}, 400
@@ -129,6 +146,7 @@ def _validate(
     compatible = {
         Fulfilment.DELIVERY: {PaymentMethod.CASH_ON_DELIVERY},
         Fulfilment.PICKUP: {PaymentMethod.PAY_AT_PICKUP},
+        Fulfilment.DINE_IN: {PaymentMethod.PAY_AT_PICKUP},
     }[Fulfilment(data.fulfilment)]
     if payment not in cfg.payment_methods or payment not in compatible:
         raise DomainError("payment_method_unavailable")
@@ -246,6 +264,7 @@ def place_order(customer: Customer, branch: Branch, data: CheckoutInput) -> tupl
             customer_phone=q.phone,
             delivery_zone=q.zone,
             zone_name_snapshot=q.zone.name_ar if q.zone else "",
+            table_label=data.table_label if data.fulfilment == Fulfilment.DINE_IN else "",
             address_area=data.address_area.strip()[:120] if is_delivery else "",
             address_street=data.address_street.strip()[:200] if is_delivery else "",
             address_landmark=data.address_landmark.strip()[:200] if is_delivery else "",
@@ -310,11 +329,12 @@ def place_order(customer: Customer, branch: Branch, data: CheckoutInput) -> tupl
             source=EventSource.CUSTOMER,
         )
         # A different (unverified) number replaces the old one and drops its verification.
-        verified = {} if q.phone == customer.phone else {"phone_verified_at": None}
+        contact: dict[str, Any] = {}
+        if q.phone and q.phone != customer.phone:  # a dine-in order may carry no phone
+            contact = {"phone": q.phone, "phone_verified_at": None}
         Customer.objects.filter(pk=customer.pk).update(
             full_name=order.customer_name,
-            phone=q.phone,
-            **verified,
+            **contact,
             orders_count=F("orders_count") + 1,
             last_order_at=now,
         )

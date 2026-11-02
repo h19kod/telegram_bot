@@ -113,8 +113,11 @@ def staff_order_text(order: Order, lang: str = "ar") -> str:
         f"🧾 <b>{'Order' if en else 'طلب'} #{order.number}</b> — {_l(STATUS_LABELS[order.status], lang)}",
         "",
         f"👤 {escape(order.customer_name)}",
-        f"📞 <code>{escape(order.customer_phone)}</code>",
     ]
+    if order.customer_phone:
+        lines.append(f"📞 <code>{escape(order.customer_phone)}</code>")
+    if order.fulfilment == Fulfilment.DINE_IN:
+        lines.append(f"🍽 <b>{'Table' if en else 'طاولة'} {escape(order.table_label)}</b>")
     if order.fulfilment == Fulfilment.DELIVERY:
         addr = " - ".join(
             escape(p)

@@ -65,8 +65,8 @@ def allowed_targets(order: Order) -> list[str]:
 def _fulfilment_allows(order: Order, frm: str, to: str) -> bool:
     if (frm, to) == (S.READY, S.OUT_FOR_DELIVERY):
         return order.fulfilment == Fulfilment.DELIVERY
-    if (frm, to) == (S.READY, S.DELIVERED):
-        return order.fulfilment == Fulfilment.PICKUP
+    if (frm, to) == (S.READY, S.DELIVERED):  # handed over at the counter / served at the table
+        return order.fulfilment in (Fulfilment.PICKUP, Fulfilment.DINE_IN)
     return True
 
 

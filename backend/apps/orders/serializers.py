@@ -80,6 +80,7 @@ class OrderListSerializer(serializers.ModelSerializer):
             "customer_name",
             "customer_phone",
             "zone_name_snapshot",
+            "table_label",
             "currency",
             "subtotal",
             "delivery_fee",
@@ -200,8 +201,17 @@ def priced_cart_data(priced: PricedCart) -> dict[str, Any]:
 class CheckoutSerializer(serializers.Serializer):
     fulfilment = serializers.ChoiceField(choices=Fulfilment.choices)
     customer_name = serializers.CharField(max_length=150)
-    customer_phone = serializers.CharField(max_length=32)
+    customer_phone = serializers.CharField(
+        max_length=32,
+        required=False,
+        allow_blank=True,
+        default="",
+        help_text="Required except for dine_in",
+    )
     zone_id = serializers.UUIDField(required=False, allow_null=True)
+    table_label = serializers.CharField(
+        max_length=10, required=False, allow_blank=True, help_text="dine_in: table number"
+    )
     address_area = serializers.CharField(max_length=120, required=False, allow_blank=True)
     address_street = serializers.CharField(max_length=200, required=False, allow_blank=True)
     address_landmark = serializers.CharField(max_length=200, required=False, allow_blank=True)

@@ -12,9 +12,10 @@ import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
 import "@fontsource/inter/700.css";
 import "./index.css";
-import { initTelegram } from "./telegram";
+import { getTable, initTelegram } from "./telegram";
 
 initTelegram();
+getTable(); // remember a table-QR visit before the router drops the query string
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />

@@ -21,10 +21,13 @@ Each phase ends only when its exit criteria pass. "Done" means tested, linted, d
 
 ## Future (post-v1 backlog)
 
-QR code per business/table · thermal printer (ESC/POS via small print agent) · PDF invoices ·
-voice alert for new orders (dashboard already has sound; Telegram voice optional) · ratings & reviews ·
-full multi-branch UI · Excel reports (in v1 export) · dine-in/table ordering · local payment gateways
-(ZainCash, FastPay, Qi Card) when APIs/merchant accounts are available · loyalty points · WhatsApp channel.
+Done after v1 (2026-11-02): WhatsApp phone verification · ratings & reviews · QR code per
+business/table · dine-in/table ordering · Excel export (in v1).
+
+Open: thermal printer (ESC/POS via small print agent) · PDF invoices · voice alert for new orders
+(dashboard already has sound; Telegram voice optional) · full multi-branch UI · local payment
+gateways (ZainCash, FastPay, Qi Card) when APIs/merchant accounts are available · loyalty points ·
+WhatsApp ordering channel.
 
 ## Prerequisites on the Fedora machine (before Phase 2)
 

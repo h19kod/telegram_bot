@@ -98,6 +98,7 @@ function BranchCard({ branch }: { branch: Branch }) {
         <Toggle checked={branch.is_temporarily_closed} onChange={(v) => flag.mutate({ is_temporarily_closed: v })} label={t("temporarily_closed")} />
         <Toggle checked={branch.accepts_delivery} onChange={(v) => flag.mutate({ accepts_delivery: v })} label={t("accepts_delivery")} />
         <Toggle checked={branch.accepts_pickup} onChange={(v) => flag.mutate({ accepts_pickup: v })} label={t("accepts_pickup")} />
+        <Toggle checked={branch.accepts_dine_in} onChange={(v) => flag.mutate({ accepts_dine_in: v })} label={t("accepts_dine_in")} />
       </div>
       <p className="mb-2 text-[13px] font-semibold">{t("working_hours")}</p>
       {!hours.length && <p className="mb-2 text-[13px] text-hint">24/7</p>}
@@ -124,7 +125,9 @@ type TgStatus = TelegramOverview;
 function QrCard({ link }: { link: string }) {
   const { t, lang, membership } = useSession();
   const path = useBizPath();
-  const qrPath = path("/qr");
+  const [table, setTable] = useState("");
+  const tableOk = /^[A-Za-z0-9]{1,10}$/.test(table);
+  const qrPath = path(tableOk ? `/qr?table=${table}` : "/qr");
   const [src, setSrc] = useState<string | null>(null);
   useEffect(() => {
     let url: string | null = null;
@@ -144,7 +147,7 @@ function QrCard({ link }: { link: string }) {
     w.document.body.innerHTML = `<div style="font-family:system-ui,sans-serif;text-align:center;padding:40px" dir="rtl">
       <h1 style="font-size:32px;margin:0 0 8px"></h1><p style="font-size:20px;margin:0 0 24px"></p>
       <img style="width:360px;height:360px" alt=""><p dir="ltr" style="font-size:14px;color:#555"></p></div>`;
-    w.document.querySelector("h1")!.textContent = name;
+    w.document.querySelector("h1")!.textContent = tableOk ? `${name} — ${t("table_f", { n: table })}` : name;
     w.document.querySelector("p")!.textContent = t("qr_scan_to_order");
     w.document.querySelector("img")!.src = src;
     w.document.querySelectorAll("p")[1]!.textContent = link;
@@ -160,9 +163,13 @@ function QrCard({ link }: { link: string }) {
           <p className="max-w-64 text-[13px] text-hint">{t("qr_hint")}</p>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" onClick={print} disabled={!src}>🖨️ {t("print")}</Button>
-            <Button size="sm" variant="secondary" onClick={() => download(path("/qr?type=png"), "store-qr.png")}>PNG</Button>
-            <Button size="sm" variant="secondary" onClick={() => download(path("/qr"), "store-qr.svg")}>SVG</Button>
+            <Button size="sm" variant="secondary" onClick={() => download(`${qrPath}${tableOk ? "&" : "?"}type=png`, `${tableOk ? `table-${table}` : "store"}-qr.png`)}>PNG</Button>
+            <Button size="sm" variant="secondary" onClick={() => download(qrPath, `${tableOk ? `table-${table}` : "store"}-qr.svg`)}>SVG</Button>
           </div>
+          <Field label={t("table_number")} hint={t("table_qr_hint")}>
+            <Input dir="ltr" className="w-32" maxLength={10} value={table} placeholder="1"
+              onChange={(e) => setTable(e.target.value.replace(/[^A-Za-z0-9]/g, ""))} />
+          </Field>
         </div>
       </div>
     </Card>

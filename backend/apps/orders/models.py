@@ -69,6 +69,7 @@ OPEN_STATUSES = frozenset(set(OrderStatus) - TERMINAL_STATUSES)
 class Fulfilment(models.TextChoices):
     DELIVERY = "delivery"
     PICKUP = "pickup"
+    DINE_IN = "dine_in"
 
 
 class Channel(models.TextChoices):
@@ -114,6 +115,7 @@ class Order(TenantModel):
         related_name="+",
     )
     zone_name_snapshot = models.CharField(max_length=120, blank=True)
+    table_label = models.CharField(max_length=10, blank=True)  # dine-in only
     address_area = models.CharField(max_length=120, blank=True)
     address_street = models.CharField(max_length=200, blank=True)
     address_landmark = models.CharField(max_length=200, blank=True)

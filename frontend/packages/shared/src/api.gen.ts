@@ -2233,6 +2233,7 @@ export interface components {
             is_temporarily_closed: boolean;
             accepts_delivery: boolean;
             accepts_pickup: boolean;
+            accepts_dine_in: boolean;
             readonly hours: components["schemas"]["WorkingHours"][];
             readonly is_open_now: boolean;
         };
@@ -2250,6 +2251,7 @@ export interface components {
             is_temporarily_closed?: boolean;
             accepts_delivery?: boolean;
             accepts_pickup?: boolean;
+            accepts_dine_in?: boolean;
         };
         Business: {
             /** Format: uuid */
@@ -2381,9 +2383,15 @@ export interface components {
         CheckoutRequest: {
             fulfilment: components["schemas"]["FulfilmentEnum"];
             customer_name: string;
+            /**
+             * @description Required except for dine_in
+             * @default
+             */
             customer_phone: string;
             /** Format: uuid */
             zone_id?: string | null;
+            /** @description dine_in: table number */
+            table_label?: string;
             address_area?: string;
             address_street?: string;
             address_landmark?: string;
@@ -2576,9 +2584,10 @@ export interface components {
         /**
          * @description * `delivery` - Delivery
          *     * `pickup` - Pickup
+         *     * `dine_in` - Dine In
          * @enum {string}
          */
-        FulfilmentEnum: "delivery" | "pickup";
+        FulfilmentEnum: "delivery" | "pickup" | "dine_in";
         GmvByCurrency: {
             currency: string;
             gmv: number;
@@ -2746,6 +2755,7 @@ export interface components {
             customer_name: string;
             readonly customer_phone: string;
             zone_name_snapshot: string;
+            table_label: string;
             currency: string;
             /** Format: int64 */
             subtotal: number;
@@ -2797,6 +2807,7 @@ export interface components {
             customer: string;
             customer_name: string;
             zone_name_snapshot?: string;
+            table_label?: string;
             currency: string;
             /** Format: int64 */
             subtotal: number;
@@ -2906,6 +2917,7 @@ export interface components {
             customer_name: string;
             readonly customer_phone: string;
             zone_name_snapshot: string;
+            table_label: string;
             currency: string;
             /** Format: int64 */
             subtotal: number;
@@ -3119,6 +3131,7 @@ export interface components {
             is_temporarily_closed?: boolean;
             accepts_delivery?: boolean;
             accepts_pickup?: boolean;
+            accepts_dine_in?: boolean;
         };
         PatchedBusinessRequest: {
             name_ar?: string;
@@ -3535,6 +3548,8 @@ export interface components {
             customer_phone: string;
             /** Format: uuid */
             zone_id?: string | null;
+            /** @description dine_in: table number */
+            table_label?: string;
             address_area?: string;
             address_street?: string;
             address_landmark?: string;
@@ -3723,6 +3738,7 @@ export interface components {
             rating_count: number;
             accepts_delivery: boolean;
             accepts_pickup: boolean;
+            accepts_dine_in: boolean;
             /** @description Minor units */
             min_order_amount: number;
             payment_methods: string[];
@@ -3788,6 +3804,7 @@ export interface components {
             customer_name: string;
             customer_phone: string;
             zone_name_snapshot: string;
+            table_label: string;
             address_area: string;
             address_street: string;
             address_landmark: string;
@@ -7803,6 +7820,8 @@ export interface operations {
     b_qr_retrieve: {
         parameters: {
             query?: {
+                /** @description Table number (dine-in QR), 1-10 A-Z/0-9 */
+                table?: string;
                 type?: "png" | "svg";
             };
             header?: never;

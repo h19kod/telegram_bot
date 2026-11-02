@@ -174,13 +174,18 @@ def bot_for_business(business_id: Any) -> TelegramBot | None:
     return bot or TelegramBot.objects.filter(is_shared_platform_bot=True, is_active=True).first()
 
 
-def store_link(business: Business) -> str | None:
-    """The t.me link customers open: the shop's own bot, else the shared bot with its slug."""
+def store_link(business: Business, table: str = "") -> str | None:
+    """The t.me link customers open: the shop's own bot, else the shared bot with its slug.
+
+    A table QR adds `-t<table>` to the start payload (`?start=-t5`, shared: `?start=slug-t5`);
+    the bot then takes dine-in orders for that table.
+    """
+    suffix = f"-t{table}" if table else ""
     own = TelegramBot.objects.filter(business=business).first()
     if own:
-        return f"https://t.me/{own.username}"
+        return f"https://t.me/{own.username}" + (f"?start={suffix}" if suffix else "")
     shared = TelegramBot.objects.filter(is_shared_platform_bot=True, is_active=True).first()
-    return f"https://t.me/{shared.username}?start={business.slug}" if shared else None
+    return f"https://t.me/{shared.username}?start={business.slug}{suffix}" if shared else None
 
 
 def qr_code(data: str, kind: str = "svg", scale: int = 10) -> tuple[bytes, str]:

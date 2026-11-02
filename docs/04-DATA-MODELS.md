@@ -50,7 +50,7 @@ Conventions (apply to every model unless noted):
 | suspended_reason | text | |
 | owner | FK → User | billing owner (also has Owner membership) |
 
-**Branch** (T) — name_ar/en, governorate FK, address, location (lat/lng decimals), phone, is_default (partial unique per business), is_active, is_temporarily_closed, accepts_delivery, accepts_pickup.
+**Branch** (T) — name_ar/en, governorate FK, address, location (lat/lng decimals), phone, is_default (partial unique per business), is_active, is_temporarily_closed, accepts_delivery, accepts_pickup, accepts_dine_in (table-QR orders, default off).
 
 **WorkingHours** (T) — branch FK, weekday (0–6), opens_at (time), closes_at (time; `closes_at <= opens_at` means crosses midnight). Multiple rows per weekday allowed.
 
@@ -175,7 +175,8 @@ expires the previous ones.
 | channel | enum | `bot`, `mini_app`, `ai`, `dashboard` |
 | status | enum | `pending`, `confirmed`, `preparing`, `ready`, `out_for_delivery`, `delivered`, `cancelled`, `rejected` |
 | version | int | optimistic concurrency for transitions |
-| fulfilment | enum | `delivery`, `pickup` |
+| fulfilment | enum | `delivery`, `pickup`, `dine_in` (from a table QR: no phone, no address, `ready → delivered` = served) |
+| table_label | varchar(10) | dine-in table number `[A-Za-z0-9]{1,10}` |
 | idempotency_key | uuid | unique (business, customer, idempotency_key) |
 | customer_name, customer_phone | snapshot | |
 | delivery_zone | FK nullable (SET NULL) + `zone_name_snapshot` | |

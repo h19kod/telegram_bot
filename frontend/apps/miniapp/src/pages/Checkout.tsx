@@ -10,12 +10,13 @@ import { Button, Card, cx, Field, Input, Segmented, Skeleton, TextArea } from ".
 import { useCart } from "../hooks/queries";
 import { useMainButton } from "../hooks/telegram";
 import { useSession } from "../session";
-import { haptic } from "../telegram";
+import { getTable, haptic } from "../telegram";
 
 type Errors = Partial<Record<keyof CheckoutBody | "form", string>>;
 
 export function CheckoutPage() {
   const { api, business, customer, t, money } = useSession();
+  const table = business.accepts_dine_in ? getTable() : "";
   const navigate = useNavigate();
   const qc = useQueryClient();
   const cart = useCart();
@@ -24,13 +25,19 @@ export function CheckoutPage() {
   const addresses = useQuery({ queryKey: ["addresses"], queryFn: api.addresses });
 
   const [form, setForm] = useState<CheckoutBody>({
-    fulfilment: business.accepts_delivery ? "delivery" : "pickup",
+    fulfilment: table ? "dine_in" : business.accepts_delivery ? "delivery" : "pickup",
+    table_label: table,
     customer_name: customer.full_name || customer.first_name || "",
     customer_phone: customer.phone ? localIraqiPhone(customer.phone) : "",
     zone_id: null, address_area: "", address_street: "", address_landmark: "",
     address_building: "", notes: "",
   });
   const [errors, setErrors] = useState<Errors>({});
+  const fulfilmentOptions: { value: CheckoutBody["fulfilment"]; label: string }[] = [
+    ...(table ? [{ value: "dine_in" as const, label: `🍽 ${t("table_n", { n: table })}` }] : []),
+    ...(business.accepts_delivery ? [{ value: "delivery" as const, label: `🛵 ${t("delivery")}` }] : []),
+    ...(business.accepts_pickup ? [{ value: "pickup" as const, label: `🏪 ${t("pickup")}` }] : []),
+  ];
   const phoneVerified = useIsVerified(form.customer_phone);
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState("");
@@ -50,19 +57,22 @@ export function CheckoutPage() {
     }
   }, [addresses.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const quoteBody = useMemo(() => form.fulfilment === "pickup"
+  const atCounter = form.fulfilment !== "delivery";
+  const quoteBody = useMemo(() => form.fulfilment !== "delivery"
     ? { ...form, zone_id: null } : form, [form]);
-  const canQuote = form.fulfilment === "pickup" || Boolean(form.zone_id);
+  const canQuote = atCounter || Boolean(form.zone_id);
   const quote = useQuery({
     queryKey: ["quote", form.fulfilment, form.zone_id, cart.data?.subtotal, coupon],
     queryFn: () => api.quote({ fulfilment: quoteBody.fulfilment, zone_id: quoteBody.zone_id,
+      table_label: quoteBody.fulfilment === "dine_in" ? quoteBody.table_label : "",
       customer_name: "", customer_phone: "", coupon_code: coupon }),
     enabled: canQuote && Boolean(cart.data?.lines.length), retry: false,
   });
 
   const place = useMutation({
-    mutationFn: () => api.checkout({ ...(form.fulfilment === "pickup"
-      ? { ...form, zone_id: null } : form), coupon_code: coupon }, idemKey.current),
+    mutationFn: () => api.checkout({ ...quoteBody, coupon_code: coupon,
+      ...(form.fulfilment === "dine_in" ? { customer_phone: "" } : { table_label: "" }) },
+    idemKey.current),
     onSuccess: (order) => {
       haptic.success();
       qc.invalidateQueries({ queryKey: ["cart"] });
@@ -81,7 +91,8 @@ export function CheckoutPage() {
   function validate(): boolean {
     const e: Errors = {};
     if (form.customer_name.trim().length < 2) e.customer_name = t("required_field");
-    if (!looksLikeIraqiMobile(form.customer_phone)) e.customer_phone = t("invalid_phone");
+    if (form.fulfilment === "dine_in") { /* at the table: no phone needed */ }
+    else if (!looksLikeIraqiMobile(form.customer_phone)) e.customer_phone = t("invalid_phone");
     else if (business.phone_verification_required && !phoneVerified) {
       e.customer_phone = t("verify_phone_first");
     }
@@ -117,18 +128,25 @@ export function CheckoutPage() {
               invalid={Boolean(errors.customer_name)}
               onChange={(e) => set("customer_name", e.target.value)} />
           </Field>
-          <Field label={t("phone")} error={errors.customer_phone} hint={t("phone_hint")}>
-            <Input value={form.customer_phone} inputMode="tel" autoComplete="tel" dir="ltr"
-              invalid={Boolean(errors.customer_phone)} className="text-start"
-              onChange={(e) => set("customer_phone", e.target.value)} />
-          </Field>
-          <PhoneVerify phone={form.customer_phone} />
+          {form.fulfilment !== "dine_in" && <>
+            <Field label={t("phone")} error={errors.customer_phone} hint={t("phone_hint")}>
+              <Input value={form.customer_phone} inputMode="tel" autoComplete="tel" dir="ltr"
+                invalid={Boolean(errors.customer_phone)} className="text-start"
+                onChange={(e) => set("customer_phone", e.target.value)} />
+            </Field>
+            <PhoneVerify phone={form.customer_phone} />
+          </>}
         </Card>
 
-        {business.accepts_delivery && business.accepts_pickup && (
+        {fulfilmentOptions.length > 1 && (
           <Segmented value={form.fulfilment} onChange={(v) => set("fulfilment", v)}
-            options={[{ value: "delivery", label: `🛵 ${t("delivery")}` },
-              { value: "pickup", label: `🏪 ${t("pickup")}` }]} />
+            options={fulfilmentOptions} />
+        )}
+        {form.fulfilment === "dine_in" && (
+          <Card className="p-4">
+            <p className="font-semibold">🍽 {t("dine_in_table", { n: table })}</p>
+            <p className="text-[13px] text-hint">{t("dine_in_hint")}</p>
+          </Card>
         )}
 
         {form.fulfilment === "delivery" && (

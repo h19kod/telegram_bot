@@ -93,6 +93,7 @@ class Branch(TenantModel):
     is_temporarily_closed = models.BooleanField(default=False)
     accepts_delivery = models.BooleanField(default=True)
     accepts_pickup = models.BooleanField(default=True)
+    accepts_dine_in = models.BooleanField(default=False)  # orders from table QR codes
 
     class Meta:
         constraints = [

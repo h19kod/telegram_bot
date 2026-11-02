@@ -6526,6 +6526,14 @@
                     },
                     {
                         "in": "query",
+                        "name": "table",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Table number (dine-in QR), 1-10 A-Z/0-9"
+                    },
+                    {
+                        "in": "query",
                         "name": "type",
                         "schema": {
                             "type": "string",
@@ -11402,6 +11410,9 @@
                     "accepts_pickup": {
                         "type": "boolean"
                     },
+                    "accepts_dine_in": {
+                        "type": "boolean"
+                    },
                     "hours": {
                         "type": "array",
                         "items": {
@@ -11416,6 +11427,7 @@
                 },
                 "required": [
                     "accepts_delivery",
+                    "accepts_dine_in",
                     "accepts_pickup",
                     "address",
                     "governorate",
@@ -11479,6 +11491,9 @@
                         "type": "boolean"
                     },
                     "accepts_pickup": {
+                        "type": "boolean"
+                    },
+                    "accepts_dine_in": {
                         "type": "boolean"
                     }
                 },
@@ -11899,13 +11914,19 @@
                     },
                     "customer_phone": {
                         "type": "string",
-                        "minLength": 1,
+                        "default": "",
+                        "description": "Required except for dine_in",
                         "maxLength": 32
                     },
                     "zone_id": {
                         "type": "string",
                         "format": "uuid",
                         "nullable": true
+                    },
+                    "table_label": {
+                        "type": "string",
+                        "description": "dine_in: table number",
+                        "maxLength": 10
                     },
                     "address_area": {
                         "type": "string",
@@ -11950,7 +11971,6 @@
                 },
                 "required": [
                     "customer_name",
-                    "customer_phone",
                     "fulfilment"
                 ]
             },
@@ -12593,10 +12613,11 @@
             "FulfilmentEnum": {
                 "enum": [
                     "delivery",
-                    "pickup"
+                    "pickup",
+                    "dine_in"
                 ],
                 "type": "string",
-                "description": "* `delivery` - Delivery\n* `pickup` - Pickup"
+                "description": "* `delivery` - Delivery\n* `pickup` - Pickup\n* `dine_in` - Dine In"
             },
             "GmvByCurrency": {
                 "type": "object",
@@ -13195,6 +13216,10 @@
                         "type": "string",
                         "maxLength": 120
                     },
+                    "table_label": {
+                        "type": "string",
+                        "maxLength": 10
+                    },
                     "currency": {
                         "type": "string",
                         "maxLength": 3
@@ -13351,6 +13376,7 @@
                     "ready_at",
                     "status",
                     "subtotal",
+                    "table_label",
                     "total",
                     "version",
                     "zone_name_snapshot"
@@ -13390,6 +13416,10 @@
                     "zone_name_snapshot": {
                         "type": "string",
                         "maxLength": 120
+                    },
+                    "table_label": {
+                        "type": "string",
+                        "maxLength": 10
                     },
                     "currency": {
                         "type": "string",
@@ -13779,6 +13809,10 @@
                         "type": "string",
                         "maxLength": 120
                     },
+                    "table_label": {
+                        "type": "string",
+                        "maxLength": 10
+                    },
                     "currency": {
                         "type": "string",
                         "maxLength": 3
@@ -13848,6 +13882,7 @@
                     "placed_at",
                     "status",
                     "subtotal",
+                    "table_label",
                     "total",
                     "version",
                     "zone_name_snapshot"
@@ -14358,6 +14393,9 @@
                         "type": "boolean"
                     },
                     "accepts_pickup": {
+                        "type": "boolean"
+                    },
+                    "accepts_dine_in": {
                         "type": "boolean"
                     }
                 }
@@ -15809,6 +15847,11 @@
                         "format": "uuid",
                         "nullable": true
                     },
+                    "table_label": {
+                        "type": "string",
+                        "description": "dine_in: table number",
+                        "maxLength": 10
+                    },
                     "address_area": {
                         "type": "string",
                         "maxLength": 120
@@ -16465,6 +16508,9 @@
                     "accepts_pickup": {
                         "type": "boolean"
                     },
+                    "accepts_dine_in": {
+                        "type": "boolean"
+                    },
                     "min_order_amount": {
                         "type": "integer",
                         "description": "Minor units"
@@ -16499,6 +16545,7 @@
                 },
                 "required": [
                     "accepts_delivery",
+                    "accepts_dine_in",
                     "accepts_pickup",
                     "address",
                     "ai_enabled",
@@ -16730,6 +16777,10 @@
                         "type": "string",
                         "maxLength": 120
                     },
+                    "table_label": {
+                        "type": "string",
+                        "maxLength": 10
+                    },
                     "address_area": {
                         "type": "string",
                         "maxLength": 120
@@ -16805,6 +16856,7 @@
                     "review",
                     "status",
                     "subtotal",
+                    "table_label",
                     "timeline",
                     "total",
                     "zone_name_snapshot"

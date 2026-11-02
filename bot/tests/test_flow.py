@@ -225,6 +225,41 @@ async def test_rate_delivered_order_with_stars(env):
 
 
 @respx.mock
+async def test_table_qr_orders_dine_in_without_phone(env):
+    dp, bot, session, redis = env
+    respx.post(f"{B}/session").mock(return_value=httpx.Response(200, json={
+        "business": {**BUSINESS, "accepts_dine_in": True, "phone_verification_required": True},
+        "customer": {"language": "ar", "full_name": "Ali", "phone": "", "phone_verified": False},
+        "is_staff": False, "mini_app_url": "https://shop.example/?b=shop"}))
+    respx.get(f"{B}/customers/9001/cart").mock(return_value=httpx.Response(200, json=CART))
+    quote = respx.post(f"{B}/customers/9001/checkout/quote").mock(return_value=httpx.Response(
+        200, json={"subtotal": 19000, "delivery_fee": 0, "discount_total": 0, "total": 19000,
+                   "currency": "IQD", "payment_method": "pay_at_pickup", "zone": None}))
+    checkout = respx.post(f"{B}/customers/9001/checkout").mock(return_value=httpx.Response(
+        201, json={"id": ORDER, "number": 9, "total": 19000, "currency": "IQD"}))
+    await feed(dp, bot, redis, msg_update("/start -t12"))
+    assert "طاولة 12" in session.texts()[-1]
+    web_app = [c for c in session.calls if getattr(c, "reply_markup", None) is not None
+               and hasattr(c.reply_markup, "inline_keyboard")][-1]
+    assert web_app.reply_markup.inline_keyboard[0][0].web_app.url.endswith("&table=12")
+    await feed(dp, bot, redis, cb_update("n:checkout"))
+    await feed(dp, bot, redis, cb_update("us:name"))  # straight to notes: no phone, no address
+    await feed(dp, bot, redis, cb_update("sk:notes"))
+    assert "على الطاولة 12" in session.texts()[-1]
+    assert json.loads(quote.calls[0].request.content)["table_label"] == "12"
+    await feed(dp, bot, redis, cb_update("cf:1"))
+    body = json.loads(checkout.calls[0].request.content)
+    assert body["fulfilment"] == "dine_in"
+    assert "customer_phone" not in body
+
+    # A plain /start afterwards leaves the table behind.
+    await feed(dp, bot, redis, msg_update("/start"))
+    await feed(dp, bot, redis, cb_update("n:checkout"))
+    await feed(dp, bot, redis, cb_update("us:name"))
+    assert "رقم موبايلك" in session.texts()[-1]
+
+
+@respx.mock
 async def test_staff_button_duplicate_and_unlinked(env):
     dp, bot, session, redis = env
     route = respx.post(f"{B}/staff/transition")

@@ -10,6 +10,7 @@ import { download, get, post, qs, type Member, type OrderDetail, type OrderRow, 
   type Paginated } from "../lib/api";
 import type { TKey } from "../lib/i18n";
 import { useLiveOrders } from "../lib/live";
+import { printReceipt } from "../lib/receipt";
 import { useBizKey, useBizPath, useSession } from "../lib/session";
 
 function fmt(iso: string, lang: string) {
@@ -73,7 +74,7 @@ export function OrdersPage() {
                 <td className="px-4 py-3"><div className="font-medium">{o.customer_name}</div>
                   <div dir="ltr" className="text-[12px] text-hint">{o.customer_phone}</div></td>
                 <td className="px-4 py-3"><StatusBadge status={o.status} /></td>
-                <td className="px-4 py-3 text-[13px]">{o.fulfilment === "delivery" ? `🛵 ${o.zone_name_snapshot}` : `🏪 ${t("pickup_f")}`}</td>
+                <td className="px-4 py-3 text-[13px]">{o.fulfilment === "delivery" ? `🛵 ${o.zone_name_snapshot}` : o.fulfilment === "dine_in" ? `🍽 ${t("table_f", { n: o.table_label })}` : `🏪 ${t("pickup_f")}`}</td>
                 <td className="tabular px-4 py-3 font-semibold">{money(o.total, o.currency)}</td>
                 <td className="tabular px-4 py-3 text-[13px] text-hint">{fmt(o.placed_at, lang)}</td>
               </tr>
@@ -88,7 +89,7 @@ export function OrdersPage() {
 }
 
 function OrderModal({ id, onClose }: { id: string | null; onClose: () => void }) {
-  const { t, money, lang, can } = useSession();
+  const { t, money, lang, can, membership } = useSession();
   const key = useBizKey();
   const path = useBizPath();
   const qc = useQueryClient();
@@ -115,6 +116,8 @@ function OrderModal({ id, onClose }: { id: string | null; onClose: () => void })
       if (reason) move.mutate({ to, reason });
     } else move.mutate({ to });
   }
+  const fulfilmentLabel = (x: OrderDetail) => x.fulfilment === "delivery" ? `🛵 ${t("delivery_f")}`
+    : x.fulfilment === "dine_in" ? `🍽 ${t("table_f", { n: x.table_label })}` : `🏪 ${t("pickup_f")}`;
   const optName = (x: { option_name_ar: string; option_name_en: string }) => (lang === "en" && x.option_name_en) || x.option_name_ar;
   return (
     <Modal wide open={Boolean(id)} onClose={onClose} title={o ? `${t("order")} #${o.number}` : "…"}
@@ -130,8 +133,14 @@ function OrderModal({ id, onClose }: { id: string | null; onClose: () => void })
         <div className="grid gap-5 md:grid-cols-[1fr_260px]">
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2"><StatusBadge status={o.status} />
-              <Badge>{o.fulfilment === "delivery" ? `🛵 ${t("delivery_f")}` : `🏪 ${t("pickup_f")}`}</Badge>
-              <Badge>{o.channel}</Badge></div>
+              <Badge>{fulfilmentLabel(o)}</Badge>
+              <Badge>{o.channel}</Badge>
+              <Button size="sm" variant="secondary" className="ms-auto" onClick={() => printReceipt(o, {
+                shop: (lang === "en" && membership?.business_name_en) || membership?.business_name_ar || "",
+                order: t("order"), fulfilment: fulfilmentLabel(o), subtotal: t("subtotal"),
+                delivery: t("delivery_fee"), discount: t("discount"), total: t("total"),
+                customer: t("customer"), notes: t("notes"), thanks: t("receipt_thanks"),
+              }, (n) => money(n, o.currency), lang, fmt(o.placed_at, lang))}>🖨️ {t("print_receipt")}</Button></div>
             <ul className="divide-y divide-line rounded-lg border border-line">
               {o.items.map((i) => (
                 <li key={i.id} className="flex justify-between gap-3 p-3 text-[14px]">
@@ -144,6 +153,7 @@ function OrderModal({ id, onClose }: { id: string | null; onClose: () => void })
               <li className="space-y-1 p-3 text-[14px]">
                 <div className="flex justify-between text-hint"><span>{t("subtotal")}</span><span className="tabular">{money(o.subtotal, o.currency)}</span></div>
                 {o.delivery_fee > 0 && <div className="flex justify-between text-hint"><span>{t("delivery_fee")}</span><span className="tabular">{money(o.delivery_fee, o.currency)}</span></div>}
+                {o.discount_total > 0 && <div className="flex justify-between text-success"><span>{t("discount")}</span><span className="tabular">-{money(o.discount_total, o.currency)}</span></div>}
                 <div className="flex justify-between font-bold"><span>{t("total")}</span><span className="tabular">{money(o.total, o.currency)}</span></div>
               </li>
             </ul>

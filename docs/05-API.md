@@ -90,6 +90,7 @@ Status codes: 400 validation, 401 unauthenticated, 403 authenticated-but-forbidd
 | GET/PATCH | `settings` | Ordering rules [settings.edit] |
 | GET/PUT/DELETE | `telegram` | Bot token (write-only), status, notification chats [telegram.edit] |
 | POST | `telegram/test-notification` | Send test message |
+| GET | `qr` (`?type=png`, `?table=5`) | [settings.edit] Printable QR of the store link; with `table` the bot link carries `-t5` and orders become dine-in for that table |
 | CRUD | `branches`, `branches/{id}/hours`, `branches/{id}/closures` | [settings.edit] |
 | CRUD | `categories` (+ `POST categories/reorder`) | [catalog.edit] |
 | CRUD | `products` (+ `reorder`, `bulk-availability`) | [catalog.edit; price fields need catalog.edit_prices] |

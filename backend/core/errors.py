@@ -34,6 +34,7 @@ MESSAGES: dict[str, tuple[str, str]] = {
     "fulfilment_unavailable": ("طريقة الاستلام هذي غير متاحة", "Fulfilment type not available"),
     "delivery_zone_required": ("اختار منطقة التوصيل", "Choose a delivery zone"),
     "delivery_zone_invalid": ("منطقة التوصيل غير صحيحة", "Invalid delivery zone"),
+    "table_required": ("رقم الطاولة غير صحيح", "Invalid table number"),
     "address_required": ("اكتب عنوان التوصيل", "Delivery address is required"),
     "invalid_phone": ("رقم الهاتف غير صحيح", "Invalid phone number"),
     "payment_method_unavailable": ("طريقة الدفع غير متاحة", "Payment method not available"),

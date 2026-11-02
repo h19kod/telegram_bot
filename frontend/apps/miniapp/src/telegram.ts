@@ -97,6 +97,20 @@ export function getBusinessSlug(): string {
   );
 }
 
+const TABLE_RE = /^[A-Za-z0-9]{1,10}$/;
+
+/** Table number from a table-QR visit (`?table=5`, set by the bot); kept for this session. */
+export function getTable(): string {
+  const fromUrl = new URLSearchParams(location.search).get("table") ?? "";
+  try {
+    if (TABLE_RE.test(fromUrl)) sessionStorage.setItem("sop.table", fromUrl);
+    const saved = sessionStorage.getItem("sop.table") ?? "";
+    return TABLE_RE.test(saved) ? saved : "";
+  } catch {
+    return TABLE_RE.test(fromUrl) ? fromUrl : "";
+  }
+}
+
 export const haptic = {
   tap: () => tg?.HapticFeedback?.impactOccurred("light"),
   success: () => tg?.HapticFeedback?.notificationOccurred("success"),
