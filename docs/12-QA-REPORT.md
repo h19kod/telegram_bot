@@ -89,7 +89,7 @@ quote endpoint no longer requires contact data.
 | 4 | Load test only on a dev machine, not staging hardware | Low | Re-run `loadtest_storefront` on staging before launch (see §4) |
 | 5 | Coupons (DSC-2), multi-branch UI, Playwright E2E suite, Lighthouse audit | Feature gaps | Backlog (08-ROADMAP) |
 | 6 | OpenAPI schema incomplete for APIView endpoints (storefront/internal) | Low (docs only) | Add `extend_schema` serializers; generate TS types from it |
-| 7 | WAL archiving (PITR) not configured; daily dumps only (RPO 24 h vs target 15 min) | Medium | Add wal-g to the backup service |
+| 7 | PITR in place (§5); off-site RPO depends on the host rclone schedule | Low | Use the 5-minute off-site sync from BACKUP_RESTORE.md; add backup-age alerting |
 | 8 | HSTS preload not enabled | Low | Enable after the domain is stable |
 
 ## 4. Load test (2026-11-02)
@@ -112,3 +112,21 @@ with the load generator**, DEBUG on.
   Before the pool, ASGI's per-thread persistent connections (`CONN_MAX_AGE=60`) could grow without
   bound and exhaust `max_connections`.
 - No duplicate orders, no 5xx, no stock/number anomalies.
+
+## 5. Point-in-time recovery drill (2026-11-02)
+
+Backup service: `pg_receivewal` through a WAL-reserving replication slot (`--synchronous`) +
+daily `pg_basebackup`; restore with `infra/scripts/restore-pitr.sh`. Drill on an isolated
+Podman stack (`-p sopdrill`, production images and compose file):
+
+| Scenario | Result |
+|---|---|
+| Create data → note time T → `DROP TABLE` + new table 2 s later → restore to T | ✓ dropped table back with its row, later table absent; new timeline; whole restore 28 s |
+| Restore to latest (no target) from a base backup taken on the new timeline | ✓ commit made 2 s before the restore present (local RPO ≈ 0) |
+| Slot health after restore and after fast-checkpoint base backups | ✓ `reserved`, never invalidated |
+| Slot invalidated on purpose (pre-fix state) | ✓ detected within a minute, archive set aside as `wal-gap-*`, slot recreated, new base backup taken |
+
+Found and fixed during the drill: `pg_receivewal --create-slot` does not reserve WAL, so the
+checkpoint of the following base backup could recycle the stream's start segment and invalidate
+the slot (silent loss of WAL protection). The slot is now created with
+`pg_create_physical_replication_slot(name, true)` and its health is checked every minute.

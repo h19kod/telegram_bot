@@ -58,7 +58,7 @@ Environments: `dev` (local Compose, polling bot), `staging` (separate server/bot
 
 ## 4. Backups
 
-- Continuous WAL archiving (pgBackRest or `wal-g`) to S3-compatible off-site storage → PITR, RPO ≤ 15 min.
+- Continuous WAL archiving → PITR, RPO ≤ 15 min. Implemented with PostgreSQL's own `pg_receivewal` + `pg_basebackup` (no extra binary in the image), synced off-site every 5 min with rclone crypt; wal-g/pgBackRest remain the upgrade path for multi-server setups.
 - Nightly full backup, retention 7 daily / 4 weekly / 6 monthly, encrypted.
 - Media bucket versioning/replication.
 - Monthly restore drill into a scratch container, documented in BACKUP_RESTORE.md.

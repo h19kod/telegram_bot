@@ -14,6 +14,8 @@ template). **Never** put real tokens, keys or passwords in code, issues, chats o
 | `INTERNAL_API_SECRET` | api, bot | HMAC secret for the bot → API internal channel. Same value in both |
 | `REDIS_URL` | api, bot | Cache, channel layer and bot data |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `REDIS_PASSWORD` | compose | Database/Redis credentials |
+| `BACKUP_KEEP_DAYS` | backup | Retention of base backups, dumps and WAL (default 14) |
+| `PG_MAX_SLOT_WAL_KEEP` | postgres | Max WAL kept for a stalled backup stream before its slot is dropped (default `8GB`; the backup service then recovers with a new base backup) |
 
 ## Django / HTTP
 

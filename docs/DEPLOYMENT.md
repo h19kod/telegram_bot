@@ -130,5 +130,5 @@ dropped columns; the project follows expand → deploy → contract.
 | `worker` / `beat` | Celery: Telegram notifications (outbox), timers, expiries, heartbeat |
 | `bot` | aiogram multi-bot webhook server (talks to `api` over the private network) |
 | `postgres`, `redis` | data, broker, cache, FSM, channel layer (never published) |
-| `backup` | daily `pg_dump` + media archive with retention → `./backups` |
+| `backup` | continuous WAL stream (`pg_receivewal`) + daily base backup, `pg_dump` and media archive → `./backups` (PITR) |
 | `certbot` | certificate renewal (TLS overlay) |

@@ -23,8 +23,12 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    # max_slot_wal_keep_size caps pg_wal if the backup service stops consuming its slot.
+    command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf",
+              "-c", "max_slot_wal_keep_size=${PG_MAX_SLOT_WAL_KEEP:-8GB}"]
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro,z
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
@@ -117,7 +121,8 @@ services:
       retries: 3
     restart: unless-stopped
 
-  # Nightly logical backups to ./backups (sync that directory off-site; see BACKUP_RESTORE.md).
+  # Continuous WAL stream + nightly base backup and logical dump to ./backups
+  # (sync that directory off-site; see BACKUP_RESTORE.md).
   backup:
     image: docker.io/library/postgres:17-alpine
     environment:
@@ -127,9 +132,9 @@ services:
       PGDATABASE: ${POSTGRES_DB}
       BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
     volumes:
-      # :Z relabels bind mounts for SELinux (Fedora); harmless elsewhere.
-      - ./backups:/backups:Z
-      - ./infra/scripts/backup-loop.sh:/backup-loop.sh:ro,Z
+      # :z relabels bind mounts for SELinux (Fedora; shared with restore runs); harmless elsewhere.
+      - ./backups:/backups:z
+      - ./infra/scripts/backup-loop.sh:/backup-loop.sh:ro,z
       - media:/media:ro
     entrypoint: ["sh", "/backup-loop.sh"]
     depends_on:
