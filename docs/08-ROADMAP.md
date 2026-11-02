@@ -23,7 +23,8 @@ Each phase ends only when its exit criteria pass. "Done" means tested, linted, d
 
 Done after v1 (2026-11-02): WhatsApp phone verification · ratings & reviews · QR code per
 business/table · dine-in/table ordering · loyalty points · multi-branch (customer branch choice,
-branch management, per-branch staff) · 80 mm receipt printing (thermal
+branch management, per-branch staff) · AI assistant dashboard page (status, knowledge base, staff
+take-over and replies, private playground) · 80 mm receipt printing (thermal
 printers / PDF) · Excel export (in v1).
 
 Open: silent auto-printing (ESC/POS print agent) · voice alert for new orders

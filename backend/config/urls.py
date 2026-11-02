@@ -56,6 +56,8 @@ tenant_urls = [
     path("analytics/recent-customers", analytics.RecentCustomersView.as_view()),
     path("subscription", SubscriptionView.as_view()),
     path("audit-log", platform.BusinessAuditView.as_view()),
+    path("ai/status", chatbot.AIStatusView.as_view()),
+    path("ai/playground", chatbot.PlaygroundView.as_view()),
     *tenant.urls,
 ]
 

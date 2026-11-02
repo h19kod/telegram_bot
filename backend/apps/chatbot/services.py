@@ -322,10 +322,19 @@ def _summary(business: Business, lines: list[dict[str, Any]], lang: str) -> str:
     return "\n".join(["", "🧾", *rows, f"{label}: {format_amount(total, business.currency, lang)}"])
 
 
-def handle_message(business: Business, customer: Customer, text: str) -> dict[str, Any]:
+def handle_message(
+    business: Business, customer: Customer, text: str, *, playground: bool = False
+) -> dict[str, Any]:
     """One customer message → reply (+ optional validated proposal). Raises
-    DomainError('ai_unavailable') whenever the caller should fall back to the menu flow."""
-    if not (business.settings.ai_enabled and entitlements.has_feature(business.id, "ai_assistant")):
+    DomainError('ai_unavailable') whenever the caller should fall back to the menu flow.
+
+    `playground`: a staff test chat — works before the assistant is switched on for customers.
+    """
+    if not entitlements.has_feature(business.id, "ai_assistant"):
+        if playground:  # tell the owner why; customers just fall back to the menu flow
+            raise DomainError("feature_not_available", {"feature": "ai_assistant"}, 403)
+        raise DomainError("ai_unavailable", {"reason": "disabled"})
+    if not (business.settings.ai_enabled or playground):
         raise DomainError("ai_unavailable", {"reason": "disabled"})
     text = text.strip()[:1000]
     conv = (
@@ -430,6 +439,9 @@ def _handover(
 def _forward_to_staff(business: Business, customer: Customer, text: str) -> None:
     import uuid
 
+    if customer.is_sandbox:  # playground tests never page the staff
+        return
+
     enqueue(
         "support.message",
         business.id,
@@ -468,3 +480,94 @@ def confirm_proposal(business: Business, customer: Customer, proposal_id: Any) -
     proposal.status = ProposalStatus.CONFIRMED
     proposal.save(update_fields=["status", "updated_at"])
     return {"added": len(proposal.validated_lines), "already_confirmed": False}
+
+
+# --- Dashboard: status, staff replies, playground -------------------------------------------
+
+
+def ai_status(business: Business) -> dict[str, Any]:
+    from apps.subscriptions.services import usage, value
+
+    configured = settings.AI_PROVIDER != "anthropic" or bool(settings.AI_API_KEY)
+    return {
+        "configured": configured,
+        "provider": settings.AI_PROVIDER,
+        "model": settings.AI_MODEL,
+        "entitled": entitlements.has_feature(business.id, "ai_assistant"),
+        "enabled": business.settings.ai_enabled,
+        "messages_used": usage(business.id).get("ai_messages_per_month", 0),
+        "messages_limit": value(business.id, "ai_messages_per_month"),
+        "handed_over": AIConversation.objects.for_business(business)
+        .filter(status=ConversationStatus.HANDED_OVER, customer__is_sandbox=False)
+        .count(),
+    }
+
+
+def staff_reply(conv: AIConversation, membership: Any, text: str) -> AIMessage:
+    """A staff member answers in a conversation: the AI steps aside (handed over) and the text
+    is sent to the customer through the shop's bot after commit."""
+    text = text.strip()[:2000]
+    if not text:
+        raise DomainError("validation_error", {"text": ["required"]}, 400)
+    if conv.status == ConversationStatus.CLOSED:
+        raise DomainError("invalid_transition", {"conversation": conv.status})
+    with transaction.atomic():
+        conv.status = ConversationStatus.HANDED_OVER
+        conv.handed_over_to = membership
+        conv.save(update_fields=["status", "handed_over_to", "last_activity_at"])
+        msg = AIMessage.objects.create(
+            business_id=conv.business_id,
+            conversation=conv,
+            role=AIMessageRole.ASSISTANT,
+            content=text,
+            provider="staff",
+        )
+        if not conv.customer.is_sandbox:
+
+            def _send() -> None:
+                from apps.chatbot.tasks import send_staff_reply
+
+                send_staff_reply.delay(str(msg.id))
+
+            transaction.on_commit(_send)
+    return msg
+
+
+def close_conversation(conv: AIConversation) -> AIConversation:
+    conv.status = ConversationStatus.CLOSED
+    conv.save(update_fields=["status", "last_activity_at"])
+    return conv
+
+
+def sandbox_customer(business: Business, membership: Any) -> Customer:
+    """The staff member's own test customer (negative id: never a real Telegram user)."""
+    user = membership.user
+    customer, _ = Customer.objects.get_or_create(
+        business=business,
+        telegram_user_id=-(membership.id.int % 10**15 or 1),
+        defaults={
+            "first_name": (getattr(user, "full_name", "") or "Test")[:128],
+            "language": getattr(user, "language", "ar") or "ar",
+            "is_sandbox": True,
+        },
+    )
+    return customer
+
+
+def playground_message(
+    business: Business, membership: Any, text: str, reset: bool = False
+) -> dict[str, Any]:
+    customer = sandbox_customer(business, membership)
+    if reset:
+        AIConversation.objects.for_business(business).filter(customer=customer).exclude(
+            status=ConversationStatus.CLOSED
+        ).update(status=ConversationStatus.CLOSED)
+    if not text.strip():
+        return {"reply": "", "handed_over": False, "proposal_id": None}
+    out = handle_message(business, customer, text, playground=True)
+    # A handover in the playground must not stay stuck: the next test message reaches the AI.
+    if out["handed_over"]:
+        AIConversation.objects.for_business(business).filter(customer=customer).exclude(
+            status=ConversationStatus.CLOSED
+        ).update(status=ConversationStatus.CLOSED)
+    return out

@@ -13,6 +13,7 @@ import { CategoriesPage, DiscountsPage, ProductsPage } from "./pages/Catalog";
 import { OrdersPage } from "./pages/Orders";
 import { OverviewPage } from "./pages/Overview";
 import { CustomersPage, DeliveryPage, StaffPage } from "./pages/People";
+import { AssistantPage } from "./pages/Assistant";
 import { ReviewsPage } from "./pages/Reviews";
 import { PlatformPage } from "./pages/Platform";
 import { AccountPage, AuditPage, ReportsPage, SettingsPage, SubscriptionPage, SupportPage,
@@ -71,6 +72,7 @@ function Routed() {
           <Route path="discounts" element={p("catalog.edit_prices", <DiscountsPage />)} />
           <Route path="customers" element={p("customers.view", <CustomersPage />)} />
           <Route path="reviews" element={p("orders.view", <ReviewsPage />)} />
+          <Route path="assistant" element={p("ai.manage", <AssistantPage />)} />
           <Route path="staff" element={p("staff.manage", <StaffPage />)} />
           <Route path="delivery" element={p("delivery.manage", <DeliveryPage />)} />
           <Route path="reports" element={p("reports.view", <ReportsPage />)} />

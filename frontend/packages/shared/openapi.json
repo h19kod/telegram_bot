@@ -985,6 +985,77 @@
                 }
             }
         },
+        "/api/v1/b/{business_id}/ai/conversations/{id}/close": {
+            "post": {
+                "operationId": "b_ai_conversations_close_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "business_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "description": "نوع نص UUID يحدد هذا ai conversation.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "b"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConversationRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConversationRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Conversation"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "4XX": {
+                        "description": "Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/b/{business_id}/ai/conversations/{id}/handover": {
             "post": {
                 "operationId": "b_ai_conversations_handover_create",
@@ -1109,6 +1180,185 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/Conversation"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "4XX": {
+                        "description": "Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/b/{business_id}/ai/conversations/{id}/reply": {
+            "post": {
+                "operationId": "b_ai_conversations_reply_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "business_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "description": "نوع نص UUID يحدد هذا ai conversation.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "b"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffReplyRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffReplyRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Conversation"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "4XX": {
+                        "description": "Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/b/{business_id}/ai/playground": {
+            "post": {
+                "operationId": "b_ai_playground_create",
+                "description": "Staff test chat with the assistant (own sandbox customer, never notifies anyone).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "business_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "b"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PlaygroundRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PlaygroundRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlaygroundReply"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "4XX": {
+                        "description": "Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/b/{business_id}/ai/status": {
+            "get": {
+                "operationId": "b_ai_status_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "business_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "b"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AIStatus"
                                 }
                             }
                         },
@@ -11311,6 +11561,93 @@
     },
     "components": {
         "schemas": {
+            "AIMessage": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "role": {
+                        "$ref": "#/components/schemas/RoleEnum"
+                    },
+                    "content": {
+                        "type": "string"
+                    },
+                    "tool_name": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "from_staff": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "error": {
+                        "type": "string",
+                        "maxLength": 300
+                    }
+                },
+                "required": [
+                    "content",
+                    "created_at",
+                    "error",
+                    "from_staff",
+                    "id",
+                    "role",
+                    "tool_name"
+                ]
+            },
+            "AIStatus": {
+                "type": "object",
+                "properties": {
+                    "configured": {
+                        "type": "boolean",
+                        "description": "A provider key is set on the platform"
+                    },
+                    "provider": {
+                        "type": "string"
+                    },
+                    "model": {
+                        "type": "string"
+                    },
+                    "entitled": {
+                        "type": "boolean",
+                        "description": "The plan includes the AI assistant"
+                    },
+                    "enabled": {
+                        "type": "boolean",
+                        "description": "Switched on for customers"
+                    },
+                    "messages_used": {
+                        "type": "integer",
+                        "description": "This month"
+                    },
+                    "messages_limit": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "handed_over": {
+                        "type": "integer",
+                        "description": "Conversations waiting for staff"
+                    }
+                },
+                "required": [
+                    "configured",
+                    "enabled",
+                    "entitled",
+                    "handed_over",
+                    "messages_limit",
+                    "messages_used",
+                    "model",
+                    "provider"
+                ]
+            },
             "AddItemRequest": {
                 "type": "object",
                 "properties": {
@@ -12194,8 +12531,7 @@
                     "messages": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "additionalProperties": {}
+                            "$ref": "#/components/schemas/AIMessage"
                         },
                         "readOnly": true
                     }
@@ -15829,6 +16165,43 @@
                     "subscriptions_by_plan"
                 ]
             },
+            "PlaygroundReply": {
+                "type": "object",
+                "properties": {
+                    "reply": {
+                        "type": "string"
+                    },
+                    "handed_over": {
+                        "type": "boolean"
+                    },
+                    "proposal_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "handed_over",
+                    "proposal_id",
+                    "reply"
+                ]
+            },
+            "PlaygroundRequest": {
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "maxLength": 1000
+                    },
+                    "reset": {
+                        "type": "boolean",
+                        "default": false
+                    }
+                },
+                "required": [
+                    "text"
+                ]
+            },
             "PointsAdjustRequest": {
                 "type": "object",
                 "properties": {
@@ -16584,6 +16957,15 @@
                     "permissions"
                 ]
             },
+            "RoleEnum": {
+                "enum": [
+                    "user",
+                    "assistant",
+                    "tool"
+                ],
+                "type": "string",
+                "description": "* `user` - User\n* `assistant` - Assistant\n* `tool` - Tool"
+            },
             "RoleRequest": {
                 "type": "object",
                 "properties": {
@@ -16784,6 +17166,19 @@
                 ],
                 "type": "string",
                 "description": "* `dashboard` - Dashboard\n* `telegram` - Telegram\n* `mini_app` - Mini App\n* `system` - System\n* `customer` - Customer"
+            },
+            "StaffReplyRequest": {
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2000
+                    }
+                },
+                "required": [
+                    "text"
+                ]
             },
             "StoreBranch": {
                 "type": "object",

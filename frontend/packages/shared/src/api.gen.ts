@@ -308,6 +308,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/b/{business_id}/ai/conversations/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["b_ai_conversations_close_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/b/{business_id}/ai/conversations/{id}/handover": {
         parameters: {
             query?: never;
@@ -334,6 +350,55 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["b_ai_conversations_release_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b/{business_id}/ai/conversations/{id}/reply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["b_ai_conversations_reply_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b/{business_id}/ai/playground": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff test chat with the assistant (own sandbox customer, never notifies anyone). */
+        post: operations["b_ai_playground_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b/{business_id}/ai/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["b_ai_status_retrieve"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2164,6 +2229,32 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AIMessage: {
+            /** Format: uuid */
+            readonly id: string;
+            role: components["schemas"]["RoleEnum"];
+            content: string;
+            tool_name: string;
+            readonly from_staff: boolean;
+            /** Format: date-time */
+            readonly created_at: string;
+            error: string;
+        };
+        AIStatus: {
+            /** @description A provider key is set on the platform */
+            configured: boolean;
+            provider: string;
+            model: string;
+            /** @description The plan includes the AI assistant */
+            entitled: boolean;
+            /** @description Switched on for customers */
+            enabled: boolean;
+            /** @description This month */
+            messages_used: number;
+            messages_limit: number | null;
+            /** @description Conversations waiting for staff */
+            handed_over: number;
+        };
         AddItemRequest: {
             /** Format: uuid */
             product_id: string;
@@ -2434,9 +2525,7 @@ export interface components {
             status: components["schemas"]["ConversationStatusEnum"];
             /** Format: date-time */
             readonly last_activity_at: string;
-            readonly messages: {
-                [key: string]: unknown;
-            }[];
+            readonly messages: components["schemas"]["AIMessage"][];
         };
         ConversationRequest: {
             /** Format: uuid */
@@ -3517,6 +3606,17 @@ export interface components {
             ai_messages: number;
             open_support_tickets: number;
         };
+        PlaygroundReply: {
+            reply: string;
+            handed_over: boolean;
+            /** Format: uuid */
+            proposal_id: string | null;
+        };
+        PlaygroundRequest: {
+            text: string;
+            /** @default false */
+            reset: boolean;
+        };
         PointsAdjustRequest: {
             delta: number;
             note: string;
@@ -3728,6 +3828,13 @@ export interface components {
             permissions: components["schemas"]["PermissionsEnum"][];
             readonly members_count: number;
         };
+        /**
+         * @description * `user` - User
+         *     * `assistant` - Assistant
+         *     * `tool` - Tool
+         * @enum {string}
+         */
+        RoleEnum: "user" | "assistant" | "tool";
         RoleRequest: {
             name: string;
             permissions?: components["schemas"]["PermissionsEnum"][];
@@ -3787,6 +3894,9 @@ export interface components {
          * @enum {string}
          */
         SourceEnum: "dashboard" | "telegram" | "mini_app" | "system" | "customer";
+        StaffReplyRequest: {
+            text: string;
+        };
         StoreBranch: {
             /** Format: uuid */
             id: string;
@@ -4912,6 +5022,43 @@ export interface operations {
             };
         };
     };
+    b_ai_conversations_close_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                business_id: string;
+                /** @description نوع نص UUID يحدد هذا ai conversation. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationRequest"];
+                "multipart/form-data": components["schemas"]["ConversationRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversation"];
+                };
+            };
+            /** @description Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     b_ai_conversations_handover_create: {
         parameters: {
             query?: never;
@@ -4973,6 +5120,108 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Conversation"];
+                };
+            };
+            /** @description Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    b_ai_conversations_reply_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                business_id: string;
+                /** @description نوع نص UUID يحدد هذا ai conversation. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffReplyRequest"];
+                "multipart/form-data": components["schemas"]["StaffReplyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversation"];
+                };
+            };
+            /** @description Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    b_ai_playground_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                business_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaygroundRequest"];
+                "multipart/form-data": components["schemas"]["PlaygroundRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaygroundReply"];
+                };
+            };
+            /** @description Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    b_ai_status_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                business_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIStatus"];
                 };
             };
             /** @description Error */

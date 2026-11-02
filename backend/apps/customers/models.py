@@ -21,6 +21,8 @@ class Customer(TenantModel):
     preferred_branch = models.ForeignKey(
         "businesses.Branch", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
+    # A staff member's test identity for the AI playground; hidden from customer lists.
+    is_sandbox = models.BooleanField(default=False)
     is_blocked = models.BooleanField(default=False)
     blocked_reason = models.CharField(max_length=200, blank=True)
     first_order_at = models.DateTimeField(null=True, blank=True)

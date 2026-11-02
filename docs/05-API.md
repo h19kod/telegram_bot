@@ -119,7 +119,10 @@ Status codes: 400 validation, 401 unauthenticated, 403 authenticated-but-forbidd
 | GET | `subscription` | Plan, status, entitlements, usage |
 | CRUD | `knowledge` | AI FAQ entries |
 | GET | `ai/conversations[/{id}]` | Review AI chats, take over |
-| POST | `ai/conversations/{id}/handover`, `release` | |
+| POST | `ai/conversations/{id}/handover`, `release`, `close` | |
+| POST | `ai/conversations/{id}/reply` | `{text}` staff answer: conversation becomes handed over, the text is sent to the customer by the shop's bot (HTML-escaped, after commit) |
+| GET | `ai/status` | [ai.manage] key configured, plan, switch, messages used/limit this month, waiting handovers |
+| POST | `ai/playground` | [ai.manage] `{text, reset}` private test chat (own sandbox customer, works before the switch is on, never notifies staff; counts toward the monthly quota) |
 | CRUD | `support-tickets` | Owner ↔ platform support |
 | GET | `audit-log` | [settings.edit] |
 
