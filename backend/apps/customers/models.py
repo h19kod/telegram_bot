@@ -22,6 +22,7 @@ class Customer(TenantModel):
     first_order_at = models.DateTimeField(null=True, blank=True)
     last_order_at = models.DateTimeField(null=True, blank=True)
     orders_count = models.PositiveIntegerField(default=0)
+    points_balance = models.PositiveIntegerField(default=0)  # sum of LoyaltyEntry.delta
     total_spent = models.BigIntegerField(default=0)
     last_seen_at = models.DateTimeField(null=True, blank=True)
 
@@ -63,6 +64,37 @@ class PhoneVerification(TenantModel):
         indexes = [
             models.Index(fields=["customer", "created_at"]),
             models.Index(fields=["phone", "created_at"]),
+        ]
+
+
+class LoyaltyReason(models.TextChoices):
+    EARN = "earn"
+    REDEEM = "redeem"
+    REFUND = "refund"  # redeemed points returned when the order is cancelled/rejected
+    ADJUST = "adjust"  # manual, by staff
+
+
+class LoyaltyEntry(TenantModel):
+    """Append-only points ledger; `Customer.points_balance` is its running sum."""
+
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="points")
+    order = models.ForeignKey(
+        "orders.Order", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    delta = models.IntegerField()
+    reason = models.CharField(max_length=8, choices=LoyaltyReason.choices)
+    balance_after = models.PositiveIntegerField()
+    note = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["customer", "-created_at"])]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["order", "reason"],
+                condition=models.Q(order__isnull=False),
+                name="loyalty_once_per_order_reason",
+            )
         ]
 
 

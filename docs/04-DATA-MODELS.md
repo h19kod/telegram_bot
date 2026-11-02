@@ -61,6 +61,7 @@ Conventions (apply to every model unless noted):
 | customer_cancel_window_min | int, default 5 |
 | auto_reject_after_min | int, nullable |
 | allow_order_notes | bool |
+| loyalty_enabled, loyalty_spend_per_point (1000), loyalty_point_value (25), loyalty_min_redeem (100) | bool + minor units | 1 point per `spend` paid on delivered orders; a point is worth `value` at checkout |
 | require_verified_phone | bool, default true | checkout needs a verified phone (only while a WhatsApp sender is configured) |
 | payment_methods | array enum (`cash_on_delivery`, `pay_at_pickup`) |
 | ai_enabled | bool |
@@ -153,6 +154,12 @@ Default role permissions:
 **PhoneVerification** (T) — customer FK, phone (E.164), code_hash (HMAC-SHA256 of the 6-digit code;
 the code itself is never stored), expires_at (10 min), attempts (max 5), verified_at. A new code
 expires the previous ones.
+
+**LoyaltyEntry** (T) — append-only points ledger: customer, order (nullable), delta, reason
+(`earn` on delivery, `redeem` at checkout, `refund` on cancel/reject, `adjust` by staff with a
+note), balance_after. `Customer.points_balance` is its running sum, changed only together with an
+entry under a row lock; unique (order, reason) makes earn/redeem/refund idempotent. Orders keep
+`points_redeemed` and `points_discount` (included in `discount_total`).
 
 **CustomerAddress** (T) — customer FK, label (home/work/other), zone FK, area, street, landmark, building/floor, location lat/lng, is_default.
 

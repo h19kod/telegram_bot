@@ -129,6 +129,7 @@ export type SalesPoint = S["SalesPoint"];
 export type TopProduct = S["TopProduct"];
 export type Coupon = S["Coupon"];
 export type Review = S["Review"];
+export type LoyaltyEntry = S["LoyaltyEntry"];
 export type ReviewSummary = S["ReviewSummary"];
 export type TelegramOverview = S["TelegramOverview"];
 export type SubscriptionOverview = S["SubscriptionOverview"];

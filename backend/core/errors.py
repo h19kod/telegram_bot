@@ -34,6 +34,12 @@ MESSAGES: dict[str, tuple[str, str]] = {
     "fulfilment_unavailable": ("طريقة الاستلام هذي غير متاحة", "Fulfilment type not available"),
     "delivery_zone_required": ("اختار منطقة التوصيل", "Choose a delivery zone"),
     "delivery_zone_invalid": ("منطقة التوصيل غير صحيحة", "Invalid delivery zone"),
+    "loyalty_unavailable": ("نقاط الولاء غير مفعّلة بهذا المحل", "Loyalty points are not enabled"),
+    "points_below_minimum": (
+        "عدد النقاط أقل من الحد الأدنى للاستبدال",
+        "Below the minimum points to redeem",
+    ),
+    "not_enough_points": ("ما عندك نقاط كافية", "Not enough points"),
     "table_required": ("رقم الطاولة غير صحيح", "Invalid table number"),
     "address_required": ("اكتب عنوان التوصيل", "Delivery address is required"),
     "invalid_phone": ("رقم الهاتف غير صحيح", "Invalid phone number"),

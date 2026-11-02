@@ -12,7 +12,7 @@ import { useSession } from "../session";
 import { haptic } from "../telegram";
 
 export function ProfilePage() {
-  const { api, customer, setCustomer, t, lang, setLang } = useSession();
+  const { api, business, customer, setCustomer, t, lang, setLang, money } = useSession();
   const qc = useQueryClient();
   const [name, setName] = useState(customer.full_name || customer.first_name);
   const [phone, setPhone] = useState(customer.phone ? localIraqiPhone(customer.phone) : "");
@@ -52,6 +52,18 @@ export function ProfilePage() {
             !looksLikeIraqiMobile(phone))} onClick={() => { setMsg(null); save.mutate(); }}>
             {msg ?? t("save")}</Button>
         </Card>
+
+        {business.loyalty && (
+          <Card className="space-y-1 p-4">
+            <div className="flex items-center justify-between">
+              <p className="font-semibold">⭐ {t("my_points")}</p>
+              <p className="tabular text-[22px] font-bold text-accent">{customer.points_balance}</p>
+            </div>
+            <p className="text-[13px] text-hint">{t("points_how", {
+              v: money(business.loyalty.spend_per_point), p: money(business.loyalty.point_value) })}
+              {" "}{t("points_min", { n: business.loyalty.min_redeem })}</p>
+          </Card>
+        )}
 
         <Card className="p-4">
           <p className="mb-2 text-[13px] font-medium text-hint">{t("language")}</p>

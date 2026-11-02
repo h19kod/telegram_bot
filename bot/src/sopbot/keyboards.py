@@ -309,17 +309,23 @@ def zones_kb(zones: list[dict[str, Any]], lang: str, currency: str) -> InlineKey
     return b.as_markup()
 
 
-def confirm_kb(lang: str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
+def confirm_kb(lang: str, points: int = 0) -> InlineKeyboardMarkup:
+    rows = [
+        [
+            InlineKeyboardButton(text=t("confirm_order", lang), callback_data=Confirm(ok=1).pack()),
+            InlineKeyboardButton(text=t("cancel", lang), callback_data=Confirm(ok=0).pack()),
+        ]
+    ]
+    if points:
+        rows.insert(
+            0,
             [
                 InlineKeyboardButton(
-                    text=t("confirm_order", lang), callback_data=Confirm(ok=1).pack()
-                ),
-                InlineKeyboardButton(text=t("cancel", lang), callback_data=Confirm(ok=0).pack()),
-            ]
-        ]
-    )
+                    text=t("use_points", lang, n=points), callback_data=Use(step="points").pack()
+                )
+            ],
+        )
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def orders_kb(orders: list[dict[str, Any]], lang: str) -> InlineKeyboardMarkup:

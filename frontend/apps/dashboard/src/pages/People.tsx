@@ -4,8 +4,9 @@ import { useState } from "react";
 import { PageHeader } from "../components/Shell";
 import { Badge, Button, Card, ErrorBox, errorMessage, Field, Input, Loading, Modal, Pager, Select,
   Table, Toggle, useUi } from "../components/ui";
-import { del, get, patch, post, qs, type Customer, type Invitation, type Member, type Paginated,
+import { del, get, patch, post, qs, type Customer, type Invitation, type LoyaltyEntry, type Member, type Paginated,
   type Role, type Zone } from "../lib/api";
+import type { TKey } from "../lib/i18n";
 import { useBizKey, useBizPath, useSession } from "../lib/session";
 
 export function CustomersPage() {
@@ -15,6 +16,7 @@ export function CustomersPage() {
   const qc = useQueryClient();
   const { confirm, toast } = useUi();
   const [f, setF] = useState({ search: "", page: 1, ordering: "-last_order_at" });
+  const [pointsFor, setPointsFor] = useState<Customer | null>(null);
   const q = useQuery({ queryKey: key("customers", f), placeholderData: (p) => p,
     queryFn: () => get<Paginated<Customer>>(path(`/customers${qs(f)}`)) });
   const block = useMutation({
@@ -39,7 +41,7 @@ export function CustomersPage() {
       </PageHeader>
       {q.isPending ? <Loading /> : q.isError ? <ErrorBox error={q.error} /> : (
         <>
-          <Table empty={!q.data.results.length} head={[t("customer"), t("phone"), t("orders_count"), t("total_spent"), t("last_order"), ""]}>
+          <Table empty={!q.data.results.length} head={[t("customer"), t("phone"), t("orders_count"), t("total_spent"), t("points"), t("last_order"), ""]}>
             {q.data.results.map((c) => (
               <tr key={c.id}>
                 <td className="px-4 py-2.5"><span className="font-medium">{c.display_name || "—"}</span>
@@ -49,6 +51,9 @@ export function CustomersPage() {
                   {c.phone_verified && <span className="ms-1.5 text-success" title={t("phone_verified")} aria-label={t("phone_verified")}>✓</span>}</td>
                 <td className="tabular px-4 py-2.5">{c.orders_count}</td>
                 <td className="tabular px-4 py-2.5">{money(c.total_spent)}</td>
+                <td className="tabular px-4 py-2.5">{can("settings.edit")
+                  ? <button type="button" className="font-semibold text-info hover:underline" onClick={() => setPointsFor(c)}>{c.points_balance}</button>
+                  : c.points_balance}</td>
                 <td className="tabular px-4 py-2.5 text-[13px] text-hint">{c.last_order_at ? new Date(c.last_order_at).toLocaleDateString(lang === "ar" ? "ar-IQ" : "en-GB", { numberingSystem: "latn" }) : "—"}</td>
                 <td className="px-4 py-2.5 text-end">{can("customers.block") && <Button size="sm" variant={c.is_blocked ? "secondary" : "danger"} onClick={() => block.mutate(c)}>{c.is_blocked ? t("unblock") : t("block")}</Button>}</td>
               </tr>
@@ -57,6 +62,7 @@ export function CustomersPage() {
           <Pager page={f.page} count={q.data.count} onPage={(page) => setF({ ...f, page })} />
         </>
       )}
+      {pointsFor && <PointsModal customer={pointsFor} onClose={() => setPointsFor(null)} />}
     </>
   );
 }
@@ -228,5 +234,51 @@ export function DeliveryPage() {
         </Modal>
       )}
     </>
+  );
+}
+
+function PointsModal({ customer, onClose }: { customer: Customer; onClose: () => void }) {
+  const { t, lang } = useSession();
+  const key = useBizKey();
+  const path = useBizPath();
+  const qc = useQueryClient();
+  const { toast } = useUi();
+  const [delta, setDelta] = useState("");
+  const [note, setNote] = useState("");
+  const history = useQuery({ queryKey: key("points", customer.id),
+    queryFn: () => get<LoyaltyEntry[]>(path(`/customers/${customer.id}/points`)) });
+  const save = useMutation({
+    mutationFn: () => post<Customer>(path(`/customers/${customer.id}/points`), { delta: Number(delta), note }),
+    onSuccess: () => {
+      toast(t("saved")); setDelta(""); setNote("");
+      qc.invalidateQueries({ queryKey: key("points", customer.id) });
+      qc.invalidateQueries({ queryKey: key("customers") });
+    },
+    onError: (e) => toast(errorMessage(e, t("error")), "error"),
+  });
+  return (
+    <Modal open onClose={onClose} title={`${t("points")} — ${customer.display_name || "—"}`}>
+      <form className="mb-4 flex flex-wrap items-end gap-2" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
+        <Field label={t("points_delta")}><Input dir="ltr" inputMode="numeric" className="w-32" value={delta}
+          onChange={(e) => setDelta(e.target.value.replace(/[^\d-]/g, ""))} /></Field>
+        <Field label={t("reason")} className="min-w-48 flex-1"><Input value={note} maxLength={200} onChange={(e) => setNote(e.target.value)} /></Field>
+        <Button disabled={!Number(delta) || !note.trim() || save.isPending}>{t("adjust_points")}</Button>
+      </form>
+      <p className="mb-2 text-[13px] font-semibold text-hint">{t("points_history")}</p>
+      {history.isPending ? <Loading /> : !history.data?.length ? <p className="text-[13px] text-hint">—</p> : (
+        <ul className="divide-y divide-line text-[14px]">
+          {history.data.map((e) => (
+            <li key={e.id} className="flex items-center justify-between gap-3 py-2">
+              <span>{t(`reason_${e.reason}` as TKey)}{e.order_number ? ` · #${e.order_number}` : ""}
+                {e.note && <span className="block text-[12px] text-hint">{e.note}</span>}</span>
+              <span className="text-end">
+                <span className={`tabular font-semibold ${e.delta > 0 ? "text-success" : "text-danger"}`}>{e.delta > 0 ? "+" : ""}{e.delta}</span>
+                <span className="block text-[12px] text-hint">{new Date(e.created_at).toLocaleDateString(lang === "ar" ? "ar-IQ" : "en-GB", { numberingSystem: "latn" })}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Modal>
   );
 }

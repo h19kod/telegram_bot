@@ -3,12 +3,14 @@ from __future__ import annotations
 from typing import Any
 
 from django_filters import rest_framework as filters
+from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from apps.customers.models import Customer
+from apps.customers.models import Customer, LoyaltyEntry
+from apps.orders.services import loyalty
 from apps.platform_admin.audit import audit
 from core.phone import mask_phone
 from core.tenancy import IsBusinessMember, require
@@ -30,6 +32,7 @@ class CustomerSerializer(serializers.ModelSerializer):
             "telegram_username",
             "phone",
             "phone_verified",
+            "points_balance",
             "language",
             "is_blocked",
             "blocked_reason",
@@ -42,6 +45,20 @@ class CustomerSerializer(serializers.ModelSerializer):
 
     def get_phone(self, obj: Customer) -> str:
         return obj.phone if self.context.get("show_pii") else mask_phone(obj.phone)
+
+
+class LoyaltyEntrySerializer(serializers.ModelSerializer):
+    order_number = serializers.IntegerField(source="order.number", read_only=True, allow_null=True)
+
+    class Meta:
+        model = LoyaltyEntry
+        fields = ["id", "delta", "reason", "balance_after", "note", "order_number", "created_at"]
+        read_only_fields = fields
+
+
+class PointsAdjustSerializer(serializers.Serializer):
+    delta = serializers.IntegerField(min_value=-100000, max_value=100000)
+    note = serializers.CharField(max_length=200)
 
 
 class CustomerFilter(filters.FilterSet):
@@ -100,4 +117,31 @@ class CustomerViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
         c.is_blocked, c.blocked_reason = False, ""
         c.save(update_fields=["is_blocked", "blocked_reason", "updated_at"])
         audit(request, "customer.unblock", request.business, c)
+        return Response(self.get_serializer(c).data)
+
+    @extend_schema(responses=LoyaltyEntrySerializer(many=True))
+    @action(detail=True, methods=["get"])
+    def points(self, request: Request, business_id: Any, pk: Any = None) -> Response:
+        c = self.get_object()
+        entries = LoyaltyEntry.objects.for_business(request.business).filter(customer=c)
+        return Response(
+            LoyaltyEntrySerializer(entries.select_related("order")[:100], many=True).data
+        )
+
+    @extend_schema(request=PointsAdjustSerializer, responses=CustomerSerializer)
+    @points.mapping.post
+    def adjust_points(self, request: Request, business_id: Any, pk: Any = None) -> Response:
+        require(request, "settings.edit")
+        c = self.get_object()
+        s = PointsAdjustSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        entry = loyalty.adjust(c, s.validated_data["delta"], s.validated_data["note"])
+        audit(
+            request,
+            "customer.points_adjust",
+            request.business,
+            c,
+            {"delta": entry.delta, "note": entry.note},
+        )
+        c.refresh_from_db()
         return Response(self.get_serializer(c).data)

@@ -260,6 +260,40 @@ async def test_table_qr_orders_dine_in_without_phone(env):
 
 
 @respx.mock
+async def test_bot_checkout_can_spend_points(env):
+    dp, bot, session, redis = env
+    respx.post(f"{B}/session").mock(return_value=httpx.Response(200, json={
+        "business": {**BUSINESS, "accepts_delivery": False,
+                     "loyalty": {"spend_per_point": 1000, "point_value": 25, "min_redeem": 100}},
+        "customer": {"language": "ar", "full_name": "Ali", "phone": "+9647701234567",
+                     "phone_verified": True, "points_balance": 300},
+        "is_staff": False, "mini_app_url": None}))
+    respx.get(f"{B}/customers/9001/cart").mock(return_value=httpx.Response(200, json=CART))
+
+    def quote(request):
+        used = json.loads(request.content).get("redeem_points", 0)
+        return httpx.Response(200, json={
+            "subtotal": 19000, "delivery_fee": 0, "discount_total": used * 25,
+            "total": 19000 - used * 25, "currency": "IQD", "payment_method": "pay_at_pickup",
+            "zone": None, "points_used": used, "points_discount": used * 25})
+
+    respx.post(f"{B}/customers/9001/checkout/quote").mock(side_effect=quote)
+    checkout = respx.post(f"{B}/customers/9001/checkout").mock(return_value=httpx.Response(
+        201, json={"id": ORDER, "number": 3, "total": 11500, "currency": "IQD"}))
+    await feed(dp, bot, redis, msg_update("/start"))
+    await feed(dp, bot, redis, cb_update("n:checkout"))
+    await feed(dp, bot, redis, cb_update("us:name"))
+    await feed(dp, bot, redis, cb_update("us:phone"))
+    await feed(dp, bot, redis, cb_update("sk:notes"))
+    assert find_button(session.last_markup(), "us:points")
+    await feed(dp, bot, redis, cb_update("us:points"))
+    assert "7,500" in session.texts()[-1]
+    assert "11,500" in session.texts()[-1]
+    await feed(dp, bot, redis, cb_update("cf:1"))
+    assert json.loads(checkout.calls[0].request.content)["redeem_points"] == 300
+
+
+@respx.mock
 async def test_staff_button_duplicate_and_unlinked(env):
     dp, bot, session, redis = env
     route = respx.post(f"{B}/staff/transition")

@@ -15,7 +15,7 @@ import { getTable, haptic } from "../telegram";
 type Errors = Partial<Record<keyof CheckoutBody | "form", string>>;
 
 export function CheckoutPage() {
-  const { api, business, customer, t, money } = useSession();
+  const { api, business, customer, setCustomer, t, money } = useSession();
   const table = business.accepts_dine_in ? getTable() : "";
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -27,6 +27,7 @@ export function CheckoutPage() {
   const [form, setForm] = useState<CheckoutBody>({
     fulfilment: table ? "dine_in" : business.accepts_delivery ? "delivery" : "pickup",
     table_label: table,
+    redeem_points: 0,
     customer_name: customer.full_name || customer.first_name || "",
     customer_phone: customer.phone ? localIraqiPhone(customer.phone) : "",
     zone_id: null, address_area: "", address_street: "", address_landmark: "",
@@ -41,6 +42,10 @@ export function CheckoutPage() {
   const phoneVerified = useIsVerified(form.customer_phone);
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState("");
+  const loyalty = business.loyalty;
+  const canRedeem = Boolean(loyalty && customer.points_balance >= loyalty.min_redeem);
+  const [usePoints, setUsePoints] = useState(false);
+  const redeem = canRedeem && usePoints ? customer.points_balance : 0;
   // One key per checkout screen: retries and double taps cannot create two orders.
   const idemKey = useRef(newIdempotencyKey());
   const set = <K extends keyof CheckoutBody>(k: K, v: CheckoutBody[K]) => {
@@ -62,21 +67,22 @@ export function CheckoutPage() {
     ? { ...form, zone_id: null } : form, [form]);
   const canQuote = atCounter || Boolean(form.zone_id);
   const quote = useQuery({
-    queryKey: ["quote", form.fulfilment, form.zone_id, cart.data?.subtotal, coupon],
+    queryKey: ["quote", form.fulfilment, form.zone_id, cart.data?.subtotal, coupon, redeem],
     queryFn: () => api.quote({ fulfilment: quoteBody.fulfilment, zone_id: quoteBody.zone_id,
       table_label: quoteBody.fulfilment === "dine_in" ? quoteBody.table_label : "",
-      customer_name: "", customer_phone: "", coupon_code: coupon }),
+      customer_name: "", customer_phone: "", coupon_code: coupon, redeem_points: redeem }),
     enabled: canQuote && Boolean(cart.data?.lines.length), retry: false,
   });
 
   const place = useMutation({
-    mutationFn: () => api.checkout({ ...quoteBody, coupon_code: coupon,
+    mutationFn: () => api.checkout({ ...quoteBody, coupon_code: coupon, redeem_points: redeem,
       ...(form.fulfilment === "dine_in" ? { customer_phone: "" } : { table_label: "" }) },
     idemKey.current),
     onSuccess: (order) => {
       haptic.success();
       qc.invalidateQueries({ queryKey: ["cart"] });
       qc.invalidateQueries({ queryKey: ["orders"] });
+      if (redeem) api.me().then(setCustomer).catch(() => undefined);
       navigate(`/placed/${order.id}`, { replace: true });
     },
     onError: (e) => {
@@ -222,6 +228,21 @@ export function CheckoutPage() {
           </Field>
         </Card>
 
+        {canRedeem && loyalty && (
+          <Card className="p-4">
+            <label className="flex items-center justify-between gap-3">
+              <span>
+                <span className="block font-semibold">⭐ {t("use_points")}</span>
+                <span className="text-[13px] text-hint">{t("points_worth", {
+                  n: customer.points_balance,
+                  v: money(customer.points_balance * loyalty.point_value) })}</span>
+              </span>
+              <input type="checkbox" className="size-5 accent-[var(--tg-button)]"
+                checked={usePoints} onChange={(e) => { setUsePoints(e.target.checked); haptic.select(); }} />
+            </label>
+          </Card>
+        )}
+
         <Card className="space-y-2 p-4 text-[15px]">
           <Row label={t("subtotal")} value={money(quote.data?.subtotal ?? cart.data?.subtotal
             ?? 0)} />
@@ -229,8 +250,11 @@ export function CheckoutPage() {
             <Row label={t("delivery_fee")} value={quote.data ? (quote.data.delivery_fee
               ? money(quote.data.delivery_fee) : t("free")) : "—"} />
           )}
-          {quote.data?.discount_total ? <Row label={t("discount")}
-            value={`-${money(quote.data.discount_total)}`} /> : null}
+          {quote.data && quote.data.discount_total - quote.data.points_discount > 0 ? <Row
+            label={t("discount")} value={`-${money(quote.data.discount_total
+              - quote.data.points_discount)}`} /> : null}
+          {quote.data?.points_discount ? <Row label={t("points_used", {
+            n: quote.data.points_used })} value={`-${money(quote.data.points_discount)}`} /> : null}
           <div className="border-t border-line pt-2">
             <Row bold label={t("total")} value={money(total)} />
           </div>

@@ -79,6 +79,8 @@ T: dict[str, dict[str, str]] = {
         "en": "🍽 Welcome to table {n}! Order from the menu and we'll bring it to your table.",
     },
     "summary_fulfilment_dine_in": {"ar": "🍽 على الطاولة {n}", "en": "🍽 At table {n}"},
+    "use_points": {"ar": "⭐ استخدم نقاطي ({n})", "en": "⭐ Use my points ({n})"},
+    "points_line": {"ar": "⭐ نقاط ({n})", "en": "⭐ Points ({n})"},
     "rate_order": {"ar": "⭐ شلون كان طلبك؟ قيّمنا:", "en": "⭐ How was your order? Rate us:"},
     "thanks_rating": {"ar": "شكراً على تقييمك 🌹", "en": "Thanks for your rating 🌹"},
     "your_rating": {"ar": "تقييمك", "en": "Your rating"},

@@ -154,6 +154,7 @@ class SessionView(InternalView):
                     "full_name": customer.full_name,
                     "phone": customer.phone,
                     "phone_verified": customer.phone_verified,
+                    "points_balance": customer.points_balance,
                     "is_blocked": customer.is_blocked,
                 },
                 "is_staff": is_staff,

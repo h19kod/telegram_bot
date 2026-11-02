@@ -175,6 +175,10 @@ def transition(
             Customer.objects.filter(pk=order.customer_id).update(
                 total_spent=F("total_spent") + order.total
             )
+        if to in (S.DELIVERED, S.CANCELLED, S.REJECTED):
+            from apps.orders.services.loyalty import on_status_change
+
+            on_status_change(order)
 
         OrderStatusEvent.objects.create(
             business_id=order.business_id,

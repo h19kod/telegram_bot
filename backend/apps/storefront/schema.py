@@ -16,6 +16,7 @@ class StoreMeSerializer(serializers.Serializer):
     full_name = serializers.CharField()
     phone = serializers.CharField()
     phone_verified = serializers.BooleanField()
+    points_balance = serializers.IntegerField()
     language = serializers.ChoiceField(choices=Language.choices)
     orders_count = serializers.IntegerField()
 
@@ -40,6 +41,12 @@ class OpeningHoursSerializer(serializers.Serializer):
     closes_at = serializers.CharField(help_text="HH:MM")
 
 
+class StoreLoyaltySerializer(serializers.Serializer):
+    spend_per_point = serializers.IntegerField(help_text="Minor units spent per point earned")
+    point_value = serializers.IntegerField(help_text="Minor units one point is worth")
+    min_redeem = serializers.IntegerField()
+
+
 class StoreInfoSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     slug = serializers.CharField()
@@ -58,6 +65,7 @@ class StoreInfoSerializer(serializers.Serializer):
     phone_verification_required = serializers.BooleanField()
     rating_avg = serializers.FloatField(allow_null=True, help_text="1.0-5.0, null without reviews")
     rating_count = serializers.IntegerField()
+    loyalty = StoreLoyaltySerializer(allow_null=True, help_text="null when the shop has no points")
     accepts_delivery = serializers.BooleanField()
     accepts_pickup = serializers.BooleanField()
     accepts_dine_in = serializers.BooleanField()
@@ -126,6 +134,8 @@ class QuoteResponseSerializer(serializers.Serializer):
     currency = serializers.CharField()
     payment_method = serializers.CharField()
     coupon = QuoteCouponSerializer(allow_null=True)
+    points_used = serializers.IntegerField()
+    points_discount = serializers.IntegerField(help_text="Included in discount_total")
     zone = QuoteZoneSerializer(allow_null=True)
 
 

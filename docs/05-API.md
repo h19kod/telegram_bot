@@ -104,6 +104,7 @@ Status codes: 400 validation, 401 unauthenticated, 403 authenticated-but-forbidd
 | GET | `orders/export?format=csv\|xlsx` | Async export job [reports.export] |
 | GET | `customers`, `customers/{id}` | [customers.view; phone masked without customers.view_pii] |
 | POST | `customers/{id}/block`, `unblock` | |
+| GET/POST | `customers/{id}/points` | History (last 100) · [settings.edit] `{delta, note}` manual adjustment, audited |
 | GET | `reviews` (`?rating=`), `reviews/{id}`, `reviews/summary` | [orders.view] list, average + 1–5 distribution |
 | POST | `reviews/{id}/reply` | [reviews.reply] `{reply}`; empty clears it |
 | CRUD | `delivery-zones` | [delivery.manage] |
@@ -140,6 +141,7 @@ Status codes: 400 validation, 401 unauthenticated, 403 authenticated-but-forbidd
 | GET | `orders`, `orders/{id}` | History & tracking |
 | POST | `orders/{id}/cancel` | Within window |
 | GET/PATCH | `me` | Name, phone, language. A changed phone is stored unverified |
+| POST | `checkout`, `checkout/quote` + `redeem_points` | Loyalty points as a discount (capped by balance and by what the order still costs); quote returns `points_used`, `points_discount` |
 | POST | `orders/{id}/review` | `{rating 1-5, comment?}` → order (with `review`, `can_review`); own delivered order, 7 days |
 | POST | `me/phone/code` | `{phone}` → 202 `{phone, expires_in, resend_in}`; WhatsApp code (60 s resend, 5/h per customer and per number) |
 | POST | `me/phone/confirm` | `{code}` → `me` with `phone_verified: true`; `invalid_code` carries `attempts_left` |

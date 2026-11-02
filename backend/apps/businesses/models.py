@@ -151,6 +151,14 @@ class BusinessSettings(TenantModel):
     allow_order_notes = models.BooleanField(default=True)
     # Customers must confirm their phone (WhatsApp code / Telegram contact) before ordering.
     require_verified_phone = models.BooleanField(default=True)
+    # Loyalty: 1 point per `loyalty_spend_per_point` spent (delivered orders); a point is worth
+    # `loyalty_point_value` (both minor units) when redeemed, from `loyalty_min_redeem` points.
+    loyalty_enabled = models.BooleanField(default=False)
+    loyalty_spend_per_point = models.BigIntegerField(
+        default=1000, validators=[MinValueValidator(1)]
+    )
+    loyalty_point_value = models.BigIntegerField(default=25, validators=[MinValueValidator(1)])
+    loyalty_min_redeem = models.PositiveIntegerField(default=100)
     payment_methods = ArrayField(
         models.CharField(max_length=32, choices=PaymentMethod.choices),
         default=default_payment_methods,

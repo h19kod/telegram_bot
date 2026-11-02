@@ -662,6 +662,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/b/{business_id}/customers/{id}/points": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["b_customers_points_list"];
+        put?: never;
+        post: operations["b_customers_points_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/b/{business_id}/customers/{id}/unblock": {
         parameters: {
             query?: never;
@@ -2392,6 +2408,11 @@ export interface components {
             zone_id?: string | null;
             /** @description dine_in: table number */
             table_label?: string;
+            /**
+             * @description Loyalty points to spend
+             * @default 0
+             */
+            redeem_points: number;
             address_area?: string;
             address_street?: string;
             address_landmark?: string;
@@ -2492,6 +2513,7 @@ export interface components {
             telegram_username: string;
             readonly phone: string;
             readonly phone_verified: boolean;
+            points_balance: number;
             language: components["schemas"]["LanguageEnum"];
             is_blocked: boolean;
             blocked_reason: string;
@@ -2510,6 +2532,7 @@ export interface components {
             first_name?: string;
             last_name?: string;
             telegram_username?: string;
+            points_balance?: number;
             language?: components["schemas"]["LanguageEnum"];
             is_blocked?: boolean;
             blocked_reason?: string;
@@ -2658,6 +2681,17 @@ export interface components {
             password: string;
             otp?: string;
         };
+        LoyaltyEntry: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly delta: number;
+            readonly reason: components["schemas"]["ReasonEnum"];
+            readonly balance_after: number;
+            readonly note: string;
+            readonly order_number: number | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
         Member: {
             /** Format: uuid */
             readonly id: string;
@@ -2763,6 +2797,7 @@ export interface components {
             delivery_fee: number;
             /** Format: int64 */
             discount_total: number;
+            points_redeemed: number;
             /** Format: int64 */
             total: number;
             payment_method: string;
@@ -2815,6 +2850,7 @@ export interface components {
             delivery_fee?: number;
             /** Format: int64 */
             discount_total?: number;
+            points_redeemed?: number;
             /** Format: int64 */
             total: number;
             payment_method: string;
@@ -2925,6 +2961,7 @@ export interface components {
             delivery_fee: number;
             /** Format: int64 */
             discount_total: number;
+            points_redeemed: number;
             /** Format: int64 */
             total: number;
             payment_method: string;
@@ -2998,6 +3035,21 @@ export interface components {
              */
             previous: string | null;
             results: components["schemas"]["Customer"][];
+        };
+        PaginatedLoyaltyEntryList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous: string | null;
+            results: components["schemas"]["LoyaltyEntry"][];
         };
         PaginatedOptionList: {
             /** @example 123 */
@@ -3274,6 +3326,12 @@ export interface components {
             auto_reject_after_min?: number | null;
             allow_order_notes?: boolean;
             require_verified_phone?: boolean;
+            loyalty_enabled?: boolean;
+            /** Format: int64 */
+            loyalty_spend_per_point?: number;
+            /** Format: int64 */
+            loyalty_point_value?: number;
+            loyalty_min_redeem?: number;
             payment_methods?: components["schemas"]["PaymentMethodsEnum"][];
             ai_enabled?: boolean;
             ai_persona_note?: string;
@@ -3448,6 +3506,10 @@ export interface components {
             ai_messages: number;
             open_support_tickets: number;
         };
+        PointsAdjustRequest: {
+            delta: number;
+            note: string;
+        };
         /**
          * @description * `low` - Low
          *     * `normal` - Normal
@@ -3550,6 +3612,11 @@ export interface components {
             zone_id?: string | null;
             /** @description dine_in: table number */
             table_label?: string;
+            /**
+             * @description Loyalty points to spend
+             * @default 0
+             */
+            redeem_points: number;
             address_area?: string;
             address_street?: string;
             address_landmark?: string;
@@ -3570,6 +3637,9 @@ export interface components {
             currency: string;
             payment_method: string;
             coupon: components["schemas"]["QuoteCoupon"] | null;
+            points_used: number;
+            /** @description Included in discount_total */
+            points_discount: number;
             zone: components["schemas"]["QuoteZone"] | null;
         };
         QuoteZone: {
@@ -3580,6 +3650,14 @@ export interface components {
             eta_min: number | null;
             eta_max: number | null;
         };
+        /**
+         * @description * `earn` - Earn
+         *     * `redeem` - Redeem
+         *     * `refund` - Refund
+         *     * `adjust` - Adjust
+         * @enum {string}
+         */
+        ReasonEnum: "earn" | "redeem" | "refund" | "adjust";
         RecentCustomer: {
             /** Format: uuid */
             id: string;
@@ -3674,6 +3752,12 @@ export interface components {
             auto_reject_after_min: number | null;
             allow_order_notes: boolean;
             require_verified_phone: boolean;
+            loyalty_enabled: boolean;
+            /** Format: int64 */
+            loyalty_spend_per_point: number;
+            /** Format: int64 */
+            loyalty_point_value: number;
+            loyalty_min_redeem: number;
             /** @description A WhatsApp sender is configured on the platform */
             readonly phone_verification_available: boolean;
             payment_methods: components["schemas"]["PaymentMethodsEnum"][];
@@ -3736,6 +3820,8 @@ export interface components {
              */
             rating_avg: number | null;
             rating_count: number;
+            /** @description null when the shop has no points */
+            loyalty: components["schemas"]["StoreLoyalty"] | null;
             accepts_delivery: boolean;
             accepts_pickup: boolean;
             accepts_dine_in: boolean;
@@ -3749,6 +3835,13 @@ export interface components {
             address: string;
             hours: components["schemas"]["OpeningHours"][];
         };
+        StoreLoyalty: {
+            /** @description Minor units spent per point earned */
+            spend_per_point: number;
+            /** @description Minor units one point is worth */
+            point_value: number;
+            min_redeem: number;
+        };
         StoreMe: {
             /** Format: uuid */
             id: string;
@@ -3756,6 +3849,7 @@ export interface components {
             full_name: string;
             phone: string;
             phone_verified: boolean;
+            points_balance: number;
             language: components["schemas"]["LanguageEnum"];
             orders_count: number;
         };
@@ -3796,6 +3890,7 @@ export interface components {
             delivery_fee: number;
             /** Format: int64 */
             discount_total: number;
+            points_redeemed: number;
             /** Format: int64 */
             total: number;
             payment_method: string;
@@ -5946,6 +6041,89 @@ export interface operations {
             content: {
                 "application/json": components["schemas"]["CustomerRequest"];
                 "multipart/form-data": components["schemas"]["CustomerRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Customer"];
+                };
+            };
+            /** @description Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    b_customers_points_list: {
+        parameters: {
+            query?: {
+                is_blocked?: boolean;
+                /**
+                 * @description * `ar` - العربية
+                 *     * `en` - English
+                 */
+                language?: "ar" | "en";
+                /** @description أي حقل يجب استخدامه عند ترتيب النتائج. */
+                ordering?: string;
+                /** @description رقم الصفحة ضمن النتائج المقسمة. */
+                page?: number;
+                /** @description عدد النتائج التي يجب إرجاعها في كل صفحة. */
+                page_size?: number;
+                search?: string;
+            };
+            header?: never;
+            path: {
+                business_id: string;
+                /** @description نوع نص UUID يحدد هذا customer. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedLoyaltyEntryList"];
+                };
+            };
+            /** @description Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    b_customers_points_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                business_id: string;
+                /** @description نوع نص UUID يحدد هذا customer. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PointsAdjustRequest"];
+                "multipart/form-data": components["schemas"]["PointsAdjustRequest"];
             };
         };
         responses: {

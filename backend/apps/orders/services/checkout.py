@@ -61,6 +61,7 @@ class CheckoutInput:
     payment_method: str = ""
     coupon_code: str = ""
     table_label: str = ""
+    redeem_points: int = 0
 
 
 @dataclass
@@ -75,6 +76,8 @@ class Quote:
     phone: str
     payment_method: str
     coupon: Any = None
+    points_used: int = 0
+    points_discount: int = 0
     warnings: list[str] = field(default_factory=list)
 
 
@@ -186,6 +189,18 @@ def _validate(
         coupon, discount_total = resolve(
             business.id, customer, data.coupon_code, subtotal, lock=not for_quote
         )
+    points_used, points_discount = 0, 0
+    if data.redeem_points:
+        from apps.orders.services.loyalty import redeemable
+
+        # Fresh balance: the customer row is locked by place_order, so it cannot change under us.
+        balance = (
+            Customer.objects.filter(pk=customer.pk).values_list("points_balance", flat=True).get()
+        )
+        points_used, points_discount = redeemable(
+            cfg, balance, data.redeem_points, subtotal + delivery_fee - discount_total
+        )
+        discount_total += points_discount
     return Quote(
         priced=priced,
         subtotal=subtotal,
@@ -197,6 +212,8 @@ def _validate(
         phone=phone,
         payment_method=payment,
         coupon=coupon,
+        points_used=points_used,
+        points_discount=points_discount,
     )
 
 
@@ -278,6 +295,8 @@ def place_order(customer: Customer, branch: Branch, data: CheckoutInput) -> tupl
             subtotal=q.subtotal,
             delivery_fee=q.delivery_fee,
             discount_total=q.discount_total,
+            points_redeemed=q.points_used,
+            points_discount=q.points_discount,
             total=q.total,
             placed_at=now,
         )
@@ -319,6 +338,11 @@ def place_order(customer: Customer, branch: Branch, data: CheckoutInput) -> tupl
             from apps.orders.services.coupons import redeem
 
             redeem(q.coupon, order, q.discount_total)
+
+        if q.points_used:
+            from apps.orders.services.loyalty import redeem_for_order
+
+            redeem_for_order(order)
 
         OrderStatusEvent.objects.create(
             business=business,

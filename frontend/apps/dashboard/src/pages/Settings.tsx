@@ -61,6 +61,16 @@ export function SettingsPage() {
             <Field label={t("cancel_window")} error={errs.customer_cancel_window_min}><Input inputMode="numeric" value={s.customer_cancel_window_min} onChange={(e) => setS({ ...s, customer_cancel_window_min: Number(e.target.value) || 0 })} /></Field>
             <Field label={t("auto_reject")} error={errs.auto_reject_after_min}><Input inputMode="numeric" value={s.auto_reject_after_min ?? ""} onChange={(e) => setS({ ...s, auto_reject_after_min: e.target.value ? Number(e.target.value) : null })} /></Field>
             <div className="flex items-end"><Toggle checked={s.allow_order_notes} onChange={(v) => setS({ ...s, allow_order_notes: v })} label={t("allow_notes")} /></div>
+            <div className="sm:col-span-2 space-y-3 rounded-lg bg-bg2/60 p-3">
+              <Toggle checked={s.loyalty_enabled} onChange={(v) => setS({ ...s, loyalty_enabled: v })} label={`⭐ ${t("loyalty")}`} />
+              {s.loyalty_enabled && <div className="grid gap-3 sm:grid-cols-3">
+                <Field label={t("loyalty_spend")} error={errs.loyalty_spend_per_point}><Input inputMode="numeric" value={s.loyalty_spend_per_point} onChange={(e) => setS({ ...s, loyalty_spend_per_point: Number(e.target.value) || 0 })} /></Field>
+                <Field label={t("loyalty_value")} error={errs.loyalty_point_value}><Input inputMode="numeric" value={s.loyalty_point_value} onChange={(e) => setS({ ...s, loyalty_point_value: Number(e.target.value) || 0 })} /></Field>
+                <Field label={t("loyalty_min")} error={errs.loyalty_min_redeem}><Input inputMode="numeric" value={s.loyalty_min_redeem} onChange={(e) => setS({ ...s, loyalty_min_redeem: Number(e.target.value) || 0 })} /></Field>
+              </div>}
+              {s.loyalty_enabled && s.loyalty_spend_per_point > 0 && <p className="text-[12px] text-hint">{t("loyalty_example", {
+                back: ((s.loyalty_point_value / s.loyalty_spend_per_point) * 100).toFixed(1) })}</p>}
+            </div>
             <div className="sm:col-span-2 rounded-lg bg-bg2/60 p-3">
               <Toggle checked={s.require_verified_phone} onChange={(v) => setS({ ...s, require_verified_phone: v })} label={t("require_verified_phone")} />
               <p className="mt-1.5 text-[12px] text-hint">{t("require_verified_phone_hint")}</p>

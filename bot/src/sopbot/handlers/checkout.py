@@ -86,6 +86,12 @@ async def begin(cb: CallbackQuery, ctx: Ctx, state: FSMContext) -> None:
             "known_phone": customer.get("phone") or "",
             "known_verified": bool(customer.get("phone_verified")),
             "table": table,
+            "points": (
+                customer.get("points_balance", 0)
+                if info.get("loyalty")
+                and customer.get("points_balance", 0) >= info["loyalty"]["min_redeem"]
+                else 0
+            ),
             "info": {
                 "verify_phone": bool(info.get("phone_verification_required")),
                 "accepts_delivery": info["accepts_delivery"],
@@ -322,6 +328,7 @@ def payload(co: dict[str, Any]) -> dict[str, Any]:
         "longitude",
         "notes",
         "table_label",
+        "redeem_points",
     ]
     return {k: co[k] for k in keys if co.get(k) not in (None, "")}
 
@@ -367,12 +374,28 @@ async def _summary(message: Message, ctx: Ctx, state: FSMContext) -> None:
     if co.get("notes"):
         lines.append(f"🗒 {escape(co['notes'])}")
     lines.append(f"{t('subtotal', ctx.lang)}: {money(q['subtotal'], cur, ctx.lang)}")
+    if q.get("points_discount"):
+        lines.append(
+            f"{t('points_line', ctx.lang, n=q['points_used'])}: "
+            f"-{money(q['points_discount'], cur, ctx.lang)}"
+        )
     lines.append(f"<b>{t('total', ctx.lang)}: {money(q['total'], cur, ctx.lang)}</b>")
     lines.append(t("payment_cod" if co["fulfilment"] == "delivery" else "payment_pickup", ctx.lang))
     # One idempotency key per summary: double-tapping Confirm can never create two orders.
     await _save(state, key=str(uuid.uuid4()))
     await state.set_state(Checkout.confirm)
-    await message.answer("\n".join(lines), reply_markup=confirm_kb(ctx.lang))
+    offer = co.get("points", 0) if not co.get("redeem_points") else 0
+    await message.answer("\n".join(lines), reply_markup=confirm_kb(ctx.lang, offer))
+
+
+@router.callback_query(Checkout.confirm, Use.filter(F.step == "points"))
+async def use_points(cb: CallbackQuery, ctx: Ctx, state: FSMContext) -> None:
+    await answer_cb(cb)
+    co = await _co(state)
+    await _save(state, redeem_points=co.get("points", 0))
+    with contextlib.suppress(Exception):
+        await cb.message.edit_reply_markup(reply_markup=None)
+    await _summary(cb.message, ctx, state)
 
 
 @router.callback_query(Checkout.confirm, Confirm.filter(F.ok == 1))

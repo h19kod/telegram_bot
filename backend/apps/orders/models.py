@@ -131,7 +131,9 @@ class Order(TenantModel):
     language = models.CharField(max_length=2, default="ar")
     subtotal = models.BigIntegerField()
     delivery_fee = models.BigIntegerField(default=0)
-    discount_total = models.BigIntegerField(default=0)
+    discount_total = models.BigIntegerField(default=0)  # coupon + points
+    points_redeemed = models.PositiveIntegerField(default=0)
+    points_discount = models.BigIntegerField(default=0)  # part of discount_total
     total = models.BigIntegerField()
     assigned_driver = models.ForeignKey(
         "staff.Membership",

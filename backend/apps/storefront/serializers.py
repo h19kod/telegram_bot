@@ -215,6 +215,15 @@ def business_info(business: Business, branch: Branch) -> dict[str, Any]:
         "is_active": business.is_active,
         "phone_verification_required": verification_required(business),
         **_ratings(business),
+        "loyalty": (
+            {
+                "spend_per_point": cfg.loyalty_spend_per_point,
+                "point_value": cfg.loyalty_point_value,
+                "min_redeem": cfg.loyalty_min_redeem,
+            }
+            if cfg.loyalty_enabled
+            else None
+        ),
         "accepts_delivery": branch.accepts_delivery,
         "accepts_pickup": branch.accepts_pickup,
         "accepts_dine_in": branch.accepts_dine_in,
@@ -254,6 +263,7 @@ class StoreOrderSerializer(serializers.ModelSerializer):
             "subtotal",
             "delivery_fee",
             "discount_total",
+            "points_redeemed",
             "total",
             "payment_method",
             "placed_at",

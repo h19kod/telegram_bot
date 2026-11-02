@@ -159,6 +159,7 @@ def _me(customer) -> dict[str, Any]:  # type: ignore[no-untyped-def]
         "full_name": customer.full_name,
         "phone": customer.phone,
         "phone_verified": customer.phone_verified,
+        "points_balance": customer.points_balance,
         "language": customer.language,
         "orders_count": customer.orders_count,
     }
@@ -308,6 +309,7 @@ def checkout_input(data: dict[str, Any], channel: str, key: uuid.UUID | None) ->
         payment_method=data.get("payment_method", ""),
         coupon_code=data.get("coupon_code", ""),
         table_label=data.get("table_label", ""),
+        redeem_points=data.get("redeem_points", 0),
     )
 
 

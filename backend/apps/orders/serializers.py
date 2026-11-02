@@ -85,6 +85,7 @@ class OrderListSerializer(serializers.ModelSerializer):
             "subtotal",
             "delivery_fee",
             "discount_total",
+            "points_redeemed",
             "total",
             "payment_method",
             "payment_status",
@@ -212,6 +213,9 @@ class CheckoutSerializer(serializers.Serializer):
     table_label = serializers.CharField(
         max_length=10, required=False, allow_blank=True, help_text="dine_in: table number"
     )
+    redeem_points = serializers.IntegerField(
+        required=False, default=0, min_value=0, help_text="Loyalty points to spend"
+    )
     address_area = serializers.CharField(max_length=120, required=False, allow_blank=True)
     address_street = serializers.CharField(max_length=200, required=False, allow_blank=True)
     address_landmark = serializers.CharField(max_length=200, required=False, allow_blank=True)
@@ -251,7 +255,13 @@ def quote_data(q: Any) -> dict[str, Any]:
         "total": q.total,
         "currency": q.currency,
         "payment_method": q.payment_method,
-        "coupon": {"code": q.coupon.code, "discount": q.discount_total} if q.coupon else None,
+        "coupon": (
+            {"code": q.coupon.code, "discount": q.discount_total - q.points_discount}
+            if q.coupon
+            else None
+        ),
+        "points_used": q.points_used,
+        "points_discount": q.points_discount,
         "zone": {
             "id": str(q.zone.id),
             "name_ar": q.zone.name_ar,
