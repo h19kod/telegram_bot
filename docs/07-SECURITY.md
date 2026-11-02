@@ -54,6 +54,16 @@ customer token. Unit tests include known-good vectors, tampered fields, wrong bo
 Defence layers: URL-scoped tenant → membership resolution → scoped managers → FK validation →
 DB constraints → PostgreSQL RLS → automated cross-tenant test matrix in CI.
 
+RLS (`core/rls.py`): when a request is bound to a business (`set_business_context`: dashboard
+membership, storefront customer token, internal API), its connection runs `SET ROLE app_tenant`
+with `app.business_id` set. `app_tenant` has DML rights only and the policy `tenant_isolation`
+on every table with a `business_id` column (`business_id = app.business_id`; unset → no rows).
+The role and setting are reset at the end of the request and again by the connection pool's
+`reset` hook. Migrations, Celery and platform-console requests run as the owner and are
+unaffected. Policies are re-applied after every `migrate`; `tests/test_rls.py` fails if any
+tenant table lacks one, and proves a view that forgets `for_business()` still returns 404.
+The `businesses` table itself (no `business_id`) is protected by the application layers only.
+
 ## 7. Secrets management
 
 - No secrets in git: `.env` ignored; `.env.example` with placeholders; `gitleaks` in pre-commit and CI.

@@ -19,7 +19,11 @@ def get_request_id() -> str:
 
 
 def set_business_context(business_id: object) -> None:
+    """Binds the request to one business: log context + PostgreSQL row-level security."""
+    from core import rls
+
     _business_id.set(str(business_id))
+    rls.activate(business_id)
 
 
 def get_business_context() -> str:
@@ -38,6 +42,9 @@ class RequestIdMiddleware:
         try:
             response = self.get_response(request)
         finally:
+            from core import rls
+
+            rls.deactivate()
             _request_id.reset(token)
             _business_id.reset(btoken)
         response["X-Request-ID"] = rid

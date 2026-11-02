@@ -89,6 +89,7 @@ DATABASES["default"].setdefault("OPTIONS", {})["pool"] = {
     "min_size": env.int("DB_POOL_MIN", default=2),
     "max_size": env.int("DB_POOL_MAX", default=15),
     "timeout": env.int("DB_POOL_TIMEOUT", default=20),
+    "reset": lambda conn: __import__("core.rls", fromlist=["x"]).reset_pooled_connection(conn),
 }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
