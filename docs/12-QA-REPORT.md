@@ -90,7 +90,7 @@ quote endpoint no longer requires contact data.
 | 3 | AI assistant not evaluated with real model output on an Iraqi-Arabic dataset (needs API key) | Medium | Build the ≥150-message eval set before enabling for customers |
 | 4 | Load test only on a dev machine, not staging hardware | Low | Re-run `loadtest_storefront` on staging before launch (see §4) |
 | 5 | Coupons (DSC-2), multi-branch UI, Playwright E2E suite, Lighthouse audit | Feature gaps | Backlog (08-ROADMAP) |
-| 6 | OpenAPI complete (0 errors / 0 warnings, contract-tested, TS types generated); frontend still uses hand-written request types | Low | Move Mini App/dashboard calls onto the generated `paths` types; upgrade vitest 3 → current (dev-only advisories in tinypool/@vitest/mocker; `minimatch` ReDoS via openapi-typescript is build-time only) |
+| 6 | OpenAPI complete (0 errors / 0 warnings, contract-tested, TS types generated); frontend still uses hand-written request types | Low | Move Mini App/dashboard calls onto the generated `paths` types; vitest upgraded to 4.1.12 (tinypool/@vitest/mocker advisories gone). Accepted: `minimatch` ReDoS (GHSA-g3hv-75wg-m249) inside openapi-typescript → @redocly, build-time only on our own schema file; fixed only in minimatch 11, which @redocly 1.x cannot use |
 | 7 | PITR in place (§5); off-site RPO depends on the host rclone schedule | Low | Use the 5-minute off-site sync from BACKUP_RESTORE.md; add backup-age alerting |
 | 8 | HSTS preload not enabled | Low | Enable after the domain is stable |
 
