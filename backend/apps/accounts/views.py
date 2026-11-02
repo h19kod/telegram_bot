@@ -9,8 +9,8 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from drf_spectacular.utils import extend_schema
-from rest_framework import status
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -37,6 +37,27 @@ from core.errors import DomainError
 
 CSRF_COOKIE = "sop_csrf"
 COOKIE_PATH = "/api/v1/auth/"
+
+TOKEN_RESPONSE = inline_serializer(
+    "TokenResponse",
+    {
+        "access": serializers.CharField(help_text="JWT access token (Authorization: Bearer)"),
+        "user": UserSerializer(),
+    },
+)
+CSRF_HEADER = OpenApiParameter(
+    "X-CSRF-Token",
+    str,
+    OpenApiParameter.HEADER,
+    required=True,
+    description="Value of the sop_csrf cookie (double-submit); refresh token comes from its cookie",
+)
+
+
+def _expiring(name: str, field: str) -> serializers.Serializer:
+    return inline_serializer(
+        name, {field: serializers.CharField(), "expires_in": serializers.IntegerField()}
+    )
 
 
 def _token_response(user: User, refresh: RefreshToken, code: int = 200) -> Response:
@@ -76,7 +97,7 @@ class RegisterView(APIView):
     throttle_classes = [LoginThrottle]
     throttle_scope = "login"
 
-    @extend_schema(request=RegisterSerializer, responses=UserSerializer)
+    @extend_schema(request=RegisterSerializer, responses={201: TOKEN_RESPONSE})
     def post(self, request: Request) -> Response:
         s = RegisterSerializer(data=request.data)
         s.is_valid(raise_exception=True)
@@ -93,7 +114,7 @@ class LoginView(APIView):
     throttle_classes = [LoginThrottle]
     throttle_scope = "login"
 
-    @extend_schema(request=LoginSerializer, responses=UserSerializer)
+    @extend_schema(request=LoginSerializer, responses=TOKEN_RESPONSE)
     def post(self, request: Request) -> Response:
         s = LoginSerializer(data=request.data)
         s.is_valid(raise_exception=True)
@@ -115,6 +136,7 @@ class RefreshView(APIView):
     permission_classes = [AllowAny]
     authentication_classes: list = []
 
+    @extend_schema(request=None, parameters=[CSRF_HEADER], responses=TOKEN_RESPONSE)
     def post(self, request: Request) -> Response:
         raw = request.COOKIES.get(settings.REFRESH_COOKIE_NAME)
         csrf_cookie = request.COOKIES.get(CSRF_COOKIE, "")
@@ -134,6 +156,7 @@ class LogoutView(APIView):
     permission_classes = [AllowAny]
     authentication_classes: list = []
 
+    @extend_schema(request=None, responses={204: None})
     def post(self, request: Request) -> Response:
         raw = request.COOKIES.get(settings.REFRESH_COOKIE_NAME)
         if raw:
@@ -239,6 +262,10 @@ class PasswordResetConfirmView(APIView):
 class TotpSetupView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        request=None,
+        responses=inline_serializer("TotpSetup", {"provisioning_uri": serializers.CharField()}),
+    )
     def post(self, request: Request) -> Response:
         return Response({"provisioning_uri": services.totp_setup(request.user)})
 
@@ -270,9 +297,11 @@ class TelegramLinkCodeView(APIView):
     throttle_classes = [LoginThrottle]
     throttle_scope = "link_code"
 
+    @extend_schema(request=None, responses=_expiring("TelegramLinkCode", "code"))
     def post(self, request: Request) -> Response:
         return Response({"code": services.create_link_code(request.user), "expires_in": 600})
 
+    @extend_schema(responses={204: None})
     def delete(self, request: Request) -> Response:
         from apps.accounts.models import TelegramAccount
 
@@ -283,6 +312,7 @@ class TelegramLinkCodeView(APIView):
 class WsTicketView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=None, responses=_expiring("WsTicket", "ticket"))
     def post(self, request: Request) -> Response:
         return Response(
             {"ticket": services.issue_ws_ticket(request.user), "expires_in": services.WS_TICKET_TTL}
@@ -292,6 +322,7 @@ class WsTicketView(APIView):
 class AcceptInvitationView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=None, responses={201: MembershipSerializer})
     def post(self, request: Request, token: str) -> Response:
         membership = accept_invitation(token, request.user)
         return Response(MembershipSerializer(membership).data, status=201)

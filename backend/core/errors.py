@@ -149,6 +149,8 @@ def api_exception_handler(exc: Exception, context: dict[str, Any]) -> Response |
     if code is None:
         code = getattr(exc, "default_code", "error")
     details: Any = response.data if code == "validation_error" else {}
+    if isinstance(details, list):  # a bare field's run_validation(): keep `details` an object
+        details = {"non_field_errors": details}
     if isinstance(exc, exceptions.Throttled) and exc.wait:
         details = {"retry_after": int(exc.wait)}
     response.data = error_body(code, details)

@@ -4,6 +4,8 @@ import uuid
 from typing import Any
 
 from django.shortcuts import get_object_or_404
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import serializers, status
 from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import AllowAny
@@ -31,6 +33,18 @@ from apps.orders.services.checkout import CheckoutInput, place_order, quote
 from apps.orders.services.transitions import transition
 from apps.products.services import search, storefront_products
 from apps.storefront.auth import CustomerTokenAuthentication, IsStoreCustomer, issue_customer_token
+from apps.storefront.schema import (
+    CancelSerializer,
+    CartResponseSerializer,
+    ProductPageSerializer,
+    QuantitySerializer,
+    QuoteResponseSerializer,
+    SentSerializer,
+    SessionResponseSerializer,
+    StoreInfoSerializer,
+    StoreMeSerializer,
+    StoreSupportMessageSerializer,
+)
 from apps.storefront.serializers import (
     StoreCategorySerializer,
     StoreOrderSerializer,
@@ -40,8 +54,26 @@ from apps.storefront.serializers import (
     business_info,
 )
 from core.errors import DomainError, NotFoundError
+from core.models import Language
 from core.phone import InvalidPhoneNumber, normalize_phone
 from core.telegram import InitDataError, validate_init_data
+
+IDEMPOTENCY = OpenApiParameter(
+    "Idempotency-Key",
+    OpenApiTypes.UUID,
+    OpenApiParameter.HEADER,
+    required=True,
+    description="Client-generated UUID; retries with the same key return the same order.",
+)
+PRODUCT_FILTERS = [
+    OpenApiParameter("category", OpenApiTypes.UUID),
+    OpenApiParameter("search", str, description="Arabic-normalised search, max 100 chars"),
+    OpenApiParameter("tag", str),
+    OpenApiParameter("available", bool),
+    OpenApiParameter("discounted", bool),
+    OpenApiParameter("cursor", str),
+    OpenApiParameter("page_size", int, description="Max 50"),
+]
 
 
 class StoreThrottle(SimpleRateThrottle):
@@ -78,6 +110,9 @@ class SessionSerializer(serializers.Serializer):
     init_data = serializers.CharField(max_length=4096)
 
 
+@extend_schema(
+    tags=["storefront"], request=SessionSerializer, responses=SessionResponseSerializer, auth=[]
+)
 class SessionView(APIView):
     authentication_classes: list = []
     permission_classes = [AllowAny]
@@ -122,12 +157,14 @@ def _me(customer) -> dict[str, Any]:  # type: ignore[no-untyped-def]
     }
 
 
+@extend_schema(tags=["storefront"], responses=StoreInfoSerializer)
 class InfoView(StoreView):
     def get(self, request: Request, slug: str) -> Response:
         branch = self.branch()
         return Response(business_info(self.business, branch))
 
 
+@extend_schema(tags=["storefront"], responses=StoreCategorySerializer(many=True))
 class CategoriesView(StoreView):
     def get(self, request: Request, slug: str) -> Response:
         qs = Category.objects.for_business(self.business).filter(is_active=True, is_archived=False)
@@ -141,6 +178,14 @@ class ProductPagination(CursorPagination):
     ordering = ("sort_order", "created_at", "id")
 
 
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="store_products_list",
+        parameters=PRODUCT_FILTERS,
+        responses=ProductPageSerializer,
+    )
+)
+@extend_schema(tags=["storefront"])
 class ProductsView(StoreView):
     def get(self, request: Request, slug: str) -> Response:
         qs = storefront_products(self.business.id)
@@ -163,6 +208,7 @@ class ProductsView(StoreView):
         return paginator.get_paginated_response(StoreProductListSerializer(page, many=True).data)
 
 
+@extend_schema(tags=["storefront"], responses=StoreProductSerializer)
 class ProductDetailView(StoreView):
     def get(self, request: Request, slug: str, product_id: uuid.UUID) -> Response:
         product = storefront_products(self.business.id).filter(id=product_id).first()
@@ -171,6 +217,7 @@ class ProductDetailView(StoreView):
         return Response(StoreProductSerializer(product).data)
 
 
+@extend_schema(tags=["storefront"], responses=StoreZoneSerializer(many=True))
 class ZonesView(StoreView):
     def get(self, request: Request, slug: str) -> Response:
         qs = DeliveryZone.objects.for_business(self.business).filter(
@@ -195,6 +242,7 @@ class AddItemSerializer(serializers.Serializer):
     note = serializers.CharField(max_length=200, required=False, allow_blank=True, default="")
 
 
+@extend_schema(tags=["storefront"], responses=CartResponseSerializer)
 class CartView(StoreView):
     def get(self, request: Request, slug: str) -> Response:
         return Response(cart_response(self.customer, self.branch()))
@@ -204,6 +252,9 @@ class CartView(StoreView):
         return Response(cart_response(self.customer, self.branch()))
 
 
+@extend_schema(
+    tags=["storefront"], request=AddItemSerializer, responses={201: CartResponseSerializer}
+)
 class CartItemsView(StoreView):
     def post(self, request: Request, slug: str) -> Response:
         s = AddItemSerializer(data=request.data)
@@ -215,6 +266,10 @@ class CartItemsView(StoreView):
         return Response(cart_response(self.customer, self.branch()), status=201)
 
 
+@extend_schema_view(
+    patch=extend_schema(request=QuantitySerializer),
+)
+@extend_schema(tags=["storefront"], responses=CartResponseSerializer)
 class CartItemView(StoreView):
     def patch(self, request: Request, slug: str, item_id: uuid.UUID) -> Response:
         qty = serializers.IntegerField(min_value=0, max_value=99).run_validation(
@@ -256,6 +311,7 @@ def idempotency_key(request: Request) -> uuid.UUID:
         raise DomainError("idempotency_key_required", status_code=400) from None
 
 
+@extend_schema(tags=["storefront"], request=QuoteSerializer, responses=QuoteResponseSerializer)
 class QuoteView(StoreView):
     def post(self, request: Request, slug: str) -> Response:
         s = QuoteSerializer(data=request.data)
@@ -264,6 +320,12 @@ class QuoteView(StoreView):
         return Response(quote_data(q))
 
 
+@extend_schema(
+    tags=["storefront"],
+    request=CheckoutSerializer,
+    parameters=[IDEMPOTENCY],
+    responses={201: StoreOrderSerializer, 200: StoreOrderSerializer},
+)
 class CheckoutView(StoreView):
     throttle_classes = [StoreThrottle, CheckoutThrottle]
 
@@ -289,12 +351,17 @@ def _orders(customer):  # type: ignore[no-untyped-def]
     )
 
 
+@extend_schema_view(
+    get=extend_schema(operation_id="store_orders_list", responses=StoreOrderSerializer(many=True))
+)
+@extend_schema(tags=["storefront"])
 class OrdersView(StoreView):
     def get(self, request: Request, slug: str) -> Response:
         qs = _orders(self.customer).order_by("-placed_at")[:50]
         return Response(StoreOrderSerializer(qs, many=True).data)
 
 
+@extend_schema(tags=["storefront"], responses=StoreOrderSerializer)
 class OrderDetailView(StoreView):
     def get(self, request: Request, slug: str, order_id: uuid.UUID) -> Response:
         order = _orders(self.customer).filter(id=order_id).first()
@@ -303,6 +370,7 @@ class OrderDetailView(StoreView):
         return Response(StoreOrderSerializer(order).data)
 
 
+@extend_schema(tags=["storefront"], request=CancelSerializer, responses=StoreOrderSerializer)
 class OrderCancelView(StoreView):
     def post(self, request: Request, slug: str, order_id: uuid.UUID) -> Response:
         transition(
@@ -319,7 +387,7 @@ class OrderCancelView(StoreView):
 class MeSerializer(serializers.Serializer):
     full_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
     phone = serializers.CharField(max_length=32, required=False, allow_blank=True)
-    language = serializers.ChoiceField(choices=["ar", "en"], required=False)
+    language = serializers.ChoiceField(choices=Language.choices, required=False)
 
     def validate_phone(self, v: str) -> str:
         if not v:
@@ -330,6 +398,7 @@ class MeSerializer(serializers.Serializer):
             raise serializers.ValidationError("invalid phone") from None
 
 
+@extend_schema(tags=["storefront"], request=MeSerializer, responses=StoreMeSerializer)
 class MeView(StoreView):
     def get(self, request: Request, slug: str) -> Response:
         return Response(_me(self.customer))
@@ -372,6 +441,10 @@ class AddressSerializer(serializers.ModelSerializer):
             self.fields["zone"].queryset = DeliveryZone.objects.for_business(business)
 
 
+@extend_schema_view(post=extend_schema(responses={201: AddressSerializer}))
+@extend_schema(
+    tags=["storefront"], request=AddressSerializer, responses=AddressSerializer(many=True)
+)
 class AddressesView(StoreView):
     def get(self, request: Request, slug: str) -> Response:
         qs = self.customer.addresses.all().order_by("-is_default", "-created_at")
@@ -388,6 +461,8 @@ class AddressesView(StoreView):
         return Response(s.data, status=201)
 
 
+@extend_schema_view(delete=extend_schema(responses={204: None}))
+@extend_schema(tags=["storefront"], request=AddressSerializer, responses=AddressSerializer)
 class AddressDetailView(StoreView):
     def _get(self, address_id: uuid.UUID) -> CustomerAddress:
         a = self.customer.addresses.filter(id=address_id).first()
@@ -411,6 +486,9 @@ class AddressDetailView(StoreView):
         return Response(status=204)
 
 
+@extend_schema(
+    tags=["storefront"], request=StoreSupportMessageSerializer, responses={201: SentSerializer}
+)
 class SupportView(StoreView):
     def post(self, request: Request, slug: str) -> Response:
         text = serializers.CharField(max_length=1000, min_length=2).run_validation(

@@ -6,6 +6,7 @@ class CoreConfig(AppConfig):
     name = "core"
 
     def ready(self) -> None:
+        import core.schema  # noqa: F401  (registers OpenAPI extensions)
         from core.rls import apply_policies
 
         post_migrate.connect(apply_policies, sender=self, dispatch_uid="core.rls.apply_policies")

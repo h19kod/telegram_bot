@@ -4,11 +4,19 @@ from datetime import date, timedelta
 from typing import Any
 
 from django.utils import timezone
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.analytics import services
+from apps.analytics.schema import (
+    RANGE_PARAMS,
+    OverviewSerializer,
+    RecentCustomerSerializer,
+    SalesPointSerializer,
+    TopProductSerializer,
+)
 from core.errors import DomainError
 from core.tenancy import IsBusinessMember
 
@@ -32,6 +40,7 @@ class _Base(APIView):
     required_permissions = {"get": ["reports.view"]}
 
 
+@extend_schema(tags=["analytics"], parameters=RANGE_PARAMS, responses=OverviewSerializer)
 class OverviewView(_Base):
     def get(self, request: Request, business_id: Any) -> Response:
         start, end = _range(request)
@@ -40,6 +49,11 @@ class OverviewView(_Base):
         return Response(data)
 
 
+@extend_schema(
+    tags=["analytics"],
+    parameters=[*RANGE_PARAMS, OpenApiParameter("interval", str, enum=["day", "week", "month"])],
+    responses=SalesPointSerializer(many=True),
+)
 class SalesView(_Base):
     def get(self, request: Request, business_id: Any) -> Response:
         start, end = _range(request)
@@ -49,12 +63,16 @@ class SalesView(_Base):
         return Response(services.sales_series(request.business, start, end, interval))
 
 
+@extend_schema(
+    tags=["analytics"], parameters=RANGE_PARAMS, responses=TopProductSerializer(many=True)
+)
 class TopProductsView(_Base):
     def get(self, request: Request, business_id: Any) -> Response:
         start, end = _range(request)
         return Response(services.top_products(request.business, start, end))
 
 
+@extend_schema(tags=["analytics"], responses=RecentCustomerSerializer(many=True))
 class RecentCustomersView(_Base):
     required_permissions = {"get": ["customers.view"]}
 

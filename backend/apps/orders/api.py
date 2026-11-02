@@ -57,7 +57,9 @@ class OrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
         return OrderListSerializer if self.action == "list" else OrderDetailSerializer
 
     def get_queryset(self):  # type: ignore[no-untyped-def]
-        qs = Order.objects.for_business(self.request.business)
+        if getattr(self, "swagger_fake_view", False):
+            return Order.objects.none()
+        qs = Order.objects.for_business(getattr(self.request, "business", None))
         m: Membership = self.request.membership
         if m.has_perm("orders.view_assigned_only"):
             qs = qs.filter(assigned_driver=m)
@@ -246,7 +248,7 @@ class CouponViewSet(viewsets.ModelViewSet):
     def get_queryset(self):  # type: ignore[no-untyped-def]
         from apps.orders.models import Coupon
 
-        return Coupon.objects.for_business(self.request.business)
+        return Coupon.objects.for_business(getattr(self.request, "business", None))
 
     def perform_create(self, serializer: serializers.BaseSerializer) -> None:
         require_feature(self.request.business.id, "coupons")

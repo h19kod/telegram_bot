@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -26,9 +28,53 @@ def plan_data(plan: Plan) -> dict[str, Any]:
     }
 
 
+PLAN = inline_serializer(
+    "PublicPlan",
+    {
+        "code": serializers.CharField(),
+        "name_ar": serializers.CharField(),
+        "name_en": serializers.CharField(),
+        "monthly_price": serializers.IntegerField(help_text="Minor units"),
+        "currency": serializers.CharField(),
+        "trial_days": serializers.IntegerField(),
+        "entitlements": serializers.DictField(
+            child=serializers.JSONField(allow_null=True),
+            help_text="feature code → value (null = unlimited)",
+        ),
+    },
+    many=True,
+)
+
+
 class SubscriptionView(APIView):
     permission_classes = [IsBusinessMember]
 
+    @extend_schema(
+        tags=["subscription"],
+        responses=inline_serializer(
+            "SubscriptionOverview",
+            {
+                "subscription": inline_serializer(
+                    "CurrentSubscription",
+                    {
+                        "plan": serializers.CharField(),
+                        "status": serializers.CharField(),
+                        "current_period_end": serializers.DateTimeField(allow_null=True),
+                        "grace_until": serializers.DateTimeField(allow_null=True),
+                    },
+                    allow_null=True,
+                ),
+                "entitlements": serializers.DictField(
+                    child=serializers.JSONField(allow_null=True),
+                    help_text="feature code → resolved value (null = unlimited)",
+                ),
+                "usage": serializers.DictField(
+                    child=serializers.IntegerField(), help_text="limit key → current usage"
+                ),
+                "plans": PLAN,
+            },
+        ),
+    )
     def get(self, request: Request, business_id: Any) -> Response:
         b = request.business
         sub = services.live_subscription(b.id)

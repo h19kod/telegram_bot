@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView
@@ -129,6 +130,15 @@ class BusinessView(APIView):
 class BusinessImageView(APIView):
     permission_classes = [IsBusinessMember]
 
+    @extend_schema(
+        parameters=[OpenApiParameter("kind", str, OpenApiParameter.PATH, enum=["logo", "cover"])],
+        request={
+            "multipart/form-data": inline_serializer(
+                "BusinessImageUpload", {"image": serializers.ImageField()}
+            )
+        },
+        responses=BusinessSerializer,
+    )
     def post(self, request: Request, business_id: Any, kind: str) -> Response:
         require(request, "settings.edit")
         if kind not in ("logo", "cover"):
@@ -217,6 +227,17 @@ class TelegramView(APIView):
 
     permission_classes = [IsBusinessMember]
 
+    @extend_schema(
+        responses=inline_serializer(
+            "TelegramOverview",
+            {
+                "has_own_bot": serializers.BooleanField(),
+                "bot": TelegramStatusSerializer(allow_null=True),
+                "shared_bot_username": serializers.CharField(allow_null=True),
+                "deep_link": serializers.URLField(allow_null=True),
+            },
+        )
+    )
     def get(self, request: Request, business_id: Any) -> Response:
         require(request, "telegram.edit")
         bot = TelegramBot.objects.filter(business=request.business).first()
@@ -247,6 +268,7 @@ class TelegramView(APIView):
         audit(request, "telegram.connect", request.business, changes={"bot": bot.username})
         return Response(TelegramStatusSerializer(bot).data)
 
+    @extend_schema(responses={204: None})
     def delete(self, request: Request, business_id: Any) -> Response:
         require(request, "telegram.edit")
         services.disconnect_bot(request.business)
@@ -257,6 +279,10 @@ class TelegramView(APIView):
 class TelegramTestView(APIView):
     permission_classes = [IsBusinessMember]
 
+    @extend_schema(
+        request=None,
+        responses=inline_serializer("TelegramTestResult", {"sent_to": serializers.IntegerField()}),
+    )
     def post(self, request: Request, business_id: Any) -> Response:
         from apps.notifications.services import staff_test_message
 
@@ -356,6 +382,10 @@ class BranchViewSet(TenantViewSet):
             ClosureSerializer(branch.closures.order_by("-starts_at")[:50], many=True).data
         )
 
+    @extend_schema(
+        parameters=[OpenApiParameter("closure_id", OpenApiTypes.UUID, OpenApiParameter.PATH)],
+        responses={204: None},
+    )
     @action(detail=True, methods=["delete"], url_path=r"closures/(?P<closure_id>[^/.]+)")
     def delete_closure(
         self, request: Request, business_id: Any, pk: Any = None, closure_id: Any = None

@@ -5,6 +5,8 @@ from typing import Any
 from django.db import transaction
 from django.db.models import Prefetch
 from django_filters import rest_framework as filters
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed
@@ -263,6 +265,10 @@ class ProductViewSet(TenantViewSet):
         )
         return Response(ProductImageSerializer(img).data, status=201)
 
+    @extend_schema(
+        parameters=[OpenApiParameter("image_id", OpenApiTypes.UUID, OpenApiParameter.PATH)],
+        responses={204: None},
+    )
     @action(detail=True, methods=["delete"], url_path=r"images/(?P<image_id>[^/.]+)")
     def delete_image(
         self, request: Request, business_id: Any, pk: Any = None, image_id: Any = None

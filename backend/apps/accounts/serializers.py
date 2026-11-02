@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from apps.accounts.models import User
 from apps.staff.models import Membership
+from core.models import Language
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -11,7 +12,7 @@ class RegisterSerializer(serializers.Serializer):
     phone = serializers.CharField(required=False, allow_blank=True, max_length=32)
     password = serializers.CharField(write_only=True, min_length=10, max_length=128)
     full_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
-    language = serializers.ChoiceField(choices=["ar", "en"], default="ar")
+    language = serializers.ChoiceField(choices=Language.choices, default=Language.AR)
 
 
 class LoginSerializer(serializers.Serializer):

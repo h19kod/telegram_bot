@@ -220,6 +220,18 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
     "SCHEMA_PATH_PREFIX": r"/api/v1",
+    "PREPROCESSING_HOOKS": ["core.schema.public_endpoints_only"],
+    "POSTPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.postprocess_schema_enums",
+        "core.schema.error_envelope",
+    ],
+    "ENUM_NAME_OVERRIDES": {
+        "BusinessTypeEnum": "apps.businesses.models.BusinessType",
+        "BusinessStatusEnum": "apps.businesses.models.BusinessStatus",
+        "OrderStatusEnum": "apps.orders.models.OrderStatus",
+        "FulfilmentEnum": "apps.orders.models.Fulfilment",
+        "LanguageEnum": "core.models.Language",
+    },
 }
 
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from django.conf import settings
+from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -75,6 +76,13 @@ class RoleViewSet(TenantViewSet):
 class PermissionListView(APIView):
     permission_classes = [IsBusinessMember]
 
+    @extend_schema(
+        responses=inline_serializer(
+            "Permission",
+            {"codename": serializers.CharField(), "description": serializers.CharField()},
+            many=True,
+        )
+    )
     def get(self, request: Request, business_id: Any) -> Response:
         return Response([{"codename": k, "description": v} for k, v in PERMISSIONS.items()])
 
@@ -126,7 +134,7 @@ class MemberViewSet(
 
     def get_queryset(self):  # type: ignore[no-untyped-def]
         return (
-            Membership.objects.for_business(self.request.business)
+            Membership.objects.for_business(getattr(self.request, "business", None))
             .select_related("user", "role", "user__telegram")
             .filter(is_active=True)
         )

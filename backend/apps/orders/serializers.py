@@ -4,7 +4,7 @@ from typing import Any
 
 from rest_framework import serializers
 
-from apps.orders.models import Order, OrderItem, OrderItemOption, OrderStatusEvent
+from apps.orders.models import Fulfilment, Order, OrderItem, OrderItemOption, OrderStatusEvent
 from apps.orders.services.cart import PricedCart
 from core.phone import mask_phone
 from core.serializers import current_lang
@@ -178,7 +178,7 @@ def priced_cart_data(priced: PricedCart) -> dict[str, Any]:
 
 
 class CheckoutSerializer(serializers.Serializer):
-    fulfilment = serializers.ChoiceField(choices=["delivery", "pickup"])
+    fulfilment = serializers.ChoiceField(choices=Fulfilment.choices)
     customer_name = serializers.CharField(max_length=150)
     customer_phone = serializers.CharField(max_length=32)
     zone_id = serializers.UUIDField(required=False, allow_null=True)

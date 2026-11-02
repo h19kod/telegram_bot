@@ -8,6 +8,8 @@ from typing import Any
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
 from django_filters import rest_framework as filters
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -315,6 +317,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 class SubscriptionPaymentView(APIView):
     permission_classes = [IsPlatformAdmin]
 
+    @extend_schema(tags=["platform"], request=PaymentSerializer, responses={201: PaymentSerializer})
     def post(self, request: Request, subscription_id: Any) -> Response:
         sub = Subscription.objects.filter(id=subscription_id).first()
         if sub is None:
@@ -416,9 +419,39 @@ class PlanViewSet(viewsets.ModelViewSet):
 class PlatformStatsView(APIView):
     permission_classes = [IsPlatformAdmin]
 
+    @extend_schema(
+        tags=["platform"],
+        parameters=[OpenApiParameter("days", int, description="1–365, default 30")],
+        responses=inline_serializer(
+            "PlatformStats",
+            {
+                "businesses_total": serializers.IntegerField(),
+                "businesses_active": serializers.IntegerField(),
+                "businesses_suspended": serializers.IntegerField(),
+                "new_businesses": serializers.IntegerField(),
+                "orders": serializers.IntegerField(),
+                "delivered_orders": serializers.IntegerField(),
+                "gmv_by_currency": inline_serializer(
+                    "GmvByCurrency",
+                    {"currency": serializers.CharField(), "gmv": serializers.IntegerField()},
+                    many=True,
+                ),
+                "subscriptions_by_plan": inline_serializer(
+                    "SubscriptionsByPlan",
+                    {"plan__code": serializers.CharField(), "n": serializers.IntegerField()},
+                    many=True,
+                ),
+                "ai_messages": serializers.IntegerField(),
+                "open_support_tickets": serializers.IntegerField(),
+            },
+        ),
+    )
     def get(self, request: Request) -> Response:
         now = timezone.now()
-        since = now - timedelta(days=int(request.query_params.get("days", 30)))
+        days = serializers.IntegerField(min_value=1, max_value=365).run_validation(
+            request.query_params.get("days", 30)
+        )
+        since = now - timedelta(days=days)
         orders = Order.objects.filter(placed_at__gte=since)
         agg = orders.aggregate(
             n=Count("id"),
@@ -457,6 +490,31 @@ class PlatformStatsView(APIView):
 class PlatformHealthView(APIView):
     permission_classes = [IsPlatformAdmin]
 
+    @extend_schema(
+        tags=["platform"],
+        responses=inline_serializer(
+            "PlatformHealth",
+            {
+                "components": serializers.DictField(child=serializers.CharField()),
+                "outbox_pending": serializers.IntegerField(),
+                "outbox_failed_24h": serializers.IntegerField(),
+                "bots": inline_serializer(
+                    "BotHealth",
+                    {
+                        "username": serializers.CharField(),
+                        "webhook_status": serializers.CharField(),
+                        "last_error": serializers.CharField(),
+                        "is_shared_platform_bot": serializers.BooleanField(),
+                    },
+                    many=True,
+                ),
+                "bot_service_heartbeat": serializers.IntegerField(
+                    allow_null=True, help_text="Unix time of the last heartbeat (TTL 120 s)"
+                ),
+                "worker_heartbeat": serializers.IntegerField(allow_null=True),
+            },
+        ),
+    )
     def get(self, request: Request) -> Response:
         from django.core.cache import cache
 
@@ -616,6 +674,7 @@ class BusinessAuditView(APIView):
     permission_classes = [IsBusinessMember]
     required_permissions = {"get": ["settings.edit"]}
 
+    @extend_schema(tags=["audit"], responses=AuditSerializer(many=True))
     def get(self, request: Request, business_id: Any) -> Response:
         qs = AuditLog.objects.filter(business=request.business).select_related("actor")[:200]
         return Response(AuditSerializer(qs, many=True).data)
@@ -624,8 +683,14 @@ class BusinessAuditView(APIView):
 class PlatformAuditView(APIView):
     permission_classes = [IsPlatformAdmin]
 
+    @extend_schema(
+        tags=["platform"],
+        parameters=[OpenApiParameter("business", OpenApiTypes.UUID)],
+        responses=AuditSerializer(many=True),
+    )
     def get(self, request: Request) -> Response:
         qs = AuditLog.objects.select_related("actor")
         if request.query_params.get("business"):
-            qs = qs.filter(business_id=request.query_params["business"])
+            business_id = serializers.UUIDField().run_validation(request.query_params["business"])
+            qs = qs.filter(business_id=business_id)
         return Response(AuditSerializer(qs[:500], many=True).data)

@@ -73,7 +73,7 @@ class CustomerViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
     ordering = ["-last_order_at"]
 
     def get_queryset(self):  # type: ignore[no-untyped-def]
-        return Customer.objects.for_business(self.request.business)
+        return Customer.objects.for_business(getattr(self.request, "business", None))
 
     def get_serializer_context(self) -> dict[str, Any]:
         ctx = super().get_serializer_context()

@@ -63,7 +63,8 @@ class TenantViewSet(viewsets.ModelViewSet):
 
     @property
     def business(self) -> Business:
-        return self.request.business  # type: ignore[attr-defined]
+        # OpenAPI generation runs without a tenant: for_business(None) yields an empty queryset.
+        return getattr(self.request, "business", None)  # type: ignore[return-value]
 
     @property
     def membership(self) -> Any:

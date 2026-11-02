@@ -63,7 +63,9 @@ class ConversationViewSet(
     ordering = ["-last_activity_at"]
 
     def get_queryset(self):  # type: ignore[no-untyped-def]
-        return AIConversation.objects.for_business(self.request.business).select_related("customer")
+        return AIConversation.objects.for_business(
+            getattr(self.request, "business", None)
+        ).select_related("customer")
 
     def get_serializer_context(self) -> dict[str, Any]:
         ctx = super().get_serializer_context()

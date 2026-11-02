@@ -6,7 +6,7 @@ Date: 2026-11-01 · Scope: backend, bot service, Mini App, dashboard, deployment
 
 | Suite | Result | Notes |
 |---|---|---|
-| Backend (pytest, real PostgreSQL 17 + Redis) | **146 passed, 0 failed** (2026-11-02) | 83 % line coverage overall; checkout 94 %, transitions 94 %, entitlements 97 %, AI 89 % |
+| Backend (pytest, real PostgreSQL 17 + Redis) | **151 passed, 0 failed** (2026-11-02) | 83 % line coverage overall; checkout 94 %, transitions 94 %, entitlements 97 %, AI 89 % |
 | Bot (pytest + real dispatcher, mocked Telegram/backend) | **5 passed** | Full ordering conversation, duplicate/stale staff buttons, reject reasons, throttling |
 | Frontend shared (Vitest) | **13 passed** | Money formatting, Iraqi phone hints, Arabic-Indic digits |
 | TypeScript (`tsc --noEmit`, strict) | Mini App ✓, Dashboard ✓ | Production builds succeed (110 KB / 125 KB gzipped JS) |
@@ -22,6 +22,7 @@ Date: 2026-11-01 · Scope: backend, bot service, Mini App, dashboard, deployment
 | Business registration / onboarding, cap per owner | `test_api_dashboard::test_onboarding_creates_business`, `test_security::test_business_creation_is_capped` |
 | Authentication (JWT, rotating refresh cookie + CSRF, reuse detection, phone login, 2FA) | `tests/test_api_auth.py` |
 | Tenant isolation (every route, introspected; FK injection; `business` injection) | `tests/test_tenant_isolation.py` |
+| OpenAPI contract (schema clean, real responses match it, committed schema current) | `tests/test_openapi.py` |
 | Row-level security (policy coverage, unscoped reads/writes blocked, role reset, view without `for_business()` still 404) | `tests/test_rls.py` |
 | Product create/update, price permission, images (WebP re-encode, fake image rejected) | `test_api_dashboard.py` |
 | Cart management (merge, required/single options, foreign options) | `apps/orders/tests/test_checkout.py` |
@@ -89,7 +90,7 @@ quote endpoint no longer requires contact data.
 | 3 | AI assistant not evaluated with real model output on an Iraqi-Arabic dataset (needs API key) | Medium | Build the ≥150-message eval set before enabling for customers |
 | 4 | Load test only on a dev machine, not staging hardware | Low | Re-run `loadtest_storefront` on staging before launch (see §4) |
 | 5 | Coupons (DSC-2), multi-branch UI, Playwright E2E suite, Lighthouse audit | Feature gaps | Backlog (08-ROADMAP) |
-| 6 | OpenAPI schema incomplete for APIView endpoints (storefront/internal) | Low (docs only) | Add `extend_schema` serializers; generate TS types from it |
+| 6 | OpenAPI complete (0 errors / 0 warnings, contract-tested, TS types generated); frontend still uses hand-written request types | Low | Move Mini App/dashboard calls onto the generated `paths` types; upgrade vitest 3 → current (dev-only advisories in tinypool/@vitest/mocker; `minimatch` ReDoS via openapi-typescript is build-time only) |
 | 7 | PITR in place (§5); off-site RPO depends on the host rclone schedule | Low | Use the 5-minute off-site sync from BACKUP_RESTORE.md; add backup-age alerting |
 | 8 | HSTS preload not enabled | Low | Enable after the domain is stable |
 
