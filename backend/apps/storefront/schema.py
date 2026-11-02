@@ -15,8 +15,23 @@ class StoreMeSerializer(serializers.Serializer):
     first_name = serializers.CharField()
     full_name = serializers.CharField()
     phone = serializers.CharField()
+    phone_verified = serializers.BooleanField()
     language = serializers.ChoiceField(choices=Language.choices)
     orders_count = serializers.IntegerField()
+
+
+class PhoneCodeRequestSerializer(serializers.Serializer):
+    phone = serializers.CharField(max_length=32)
+
+
+class PhoneCodeSentSerializer(serializers.Serializer):
+    phone = serializers.CharField(help_text="E.164 number the code was sent to")
+    expires_in = serializers.IntegerField(help_text="Seconds")
+    resend_in = serializers.IntegerField(help_text="Seconds before another code may be requested")
+
+
+class PhoneCodeConfirmSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=12)
 
 
 class OpeningHoursSerializer(serializers.Serializer):
@@ -40,6 +55,7 @@ class StoreInfoSerializer(serializers.Serializer):
     default_language = serializers.ChoiceField(choices=Language.choices)
     is_open = serializers.BooleanField()
     is_active = serializers.BooleanField()
+    phone_verification_required = serializers.BooleanField()
     accepts_delivery = serializers.BooleanField()
     accepts_pickup = serializers.BooleanField()
     min_order_amount = serializers.IntegerField(help_text="Minor units")

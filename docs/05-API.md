@@ -136,7 +136,9 @@ Status codes: 400 validation, 401 unauthenticated, 403 authenticated-but-forbidd
 | POST | `checkout` | Create order (Idempotency-Key required) |
 | GET | `orders`, `orders/{id}` | History & tracking |
 | POST | `orders/{id}/cancel` | Within window |
-| GET/PATCH | `me` | Name, phone, language |
+| GET/PATCH | `me` | Name, phone, language. A changed phone is stored unverified |
+| POST | `me/phone/code` | `{phone}` → 202 `{phone, expires_in, resend_in}`; WhatsApp code (60 s resend, 5/h per customer and per number) |
+| POST | `me/phone/confirm` | `{code}` → `me` with `phone_verified: true`; `invalid_code` carries `attempts_left` |
 | CRUD | `me/addresses` | Saved addresses |
 | POST | `support` | Message to business (routed to staff via bot) |
 
@@ -170,6 +172,11 @@ Status codes: 400 validation, 401 unauthenticated, 403 authenticated-but-forbidd
 | POST | `bots/{bot_id}/ai/message` | AI turn → reply + optional proposal |
 | POST | `bots/{bot_id}/ai/proposals/{id}/confirm` | Convert proposal into cart/checkout |
 | POST | `bots/{bot_id}/support` | Customer support message |
+| POST | `bots/{bot_id}/customers/{tg_id}/phone/code` · `phone/confirm` | WhatsApp verification, same rules as the Mini App |
+| POST | `bots/{bot_id}/customers/{tg_id}/phone/contact` | `{phone, contact_user_id}`: the user shared their *own* Telegram contact → verified |
+
+Checkout (both channels) fails with `phone_not_verified` (400, `details.customer_phone`) when the
+business requires verification and `customer_phone` is not the customer's verified number.
 
 ## 4. WebSocket events (`/ws/b/{business_id}/`)
 

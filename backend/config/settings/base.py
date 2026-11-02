@@ -198,6 +198,7 @@ REST_FRAMEWORK = {
         "checkout": "5/min",
         "store": "240/min",
         "link_code": "5/min",
+        "phone_code": "10/min",
     },
 }
 
@@ -262,6 +263,7 @@ CELERY_TASK_ROUTES = {
     "apps.products.tasks.*": {"queue": "media"},
     "apps.chatbot.tasks.*": {"queue": "ai"},
     "apps.analytics.tasks.*": {"queue": "reports"},
+    "apps.customers.tasks.*": {"queue": "default"},  # codes must not queue behind bulk sends
 }
 CELERY_BEAT_SCHEDULE = {
     "worker-heartbeat": {"task": "core.tasks.worker_heartbeat", "schedule": 30.0},
@@ -292,6 +294,18 @@ SHARED_BOT_TOKEN = env("SHARED_BOT_TOKEN", default="")
 CUSTOMER_TOKEN_LIFETIME = timedelta(hours=1)
 CART_TTL_DAYS = 7
 MAX_OPEN_ORDERS_PER_CUSTOMER = 3
+
+# WhatsApp phone verification (core.whatsapp): cloud | console (DEBUG) | memory (tests) | disabled
+WHATSAPP_PROVIDER = env("WHATSAPP_PROVIDER", default="disabled")
+WHATSAPP_API_BASE = env("WHATSAPP_API_BASE", default="https://graph.facebook.com/v22.0")
+WHATSAPP_TOKEN = env("WHATSAPP_TOKEN", default="")
+WHATSAPP_PHONE_NUMBER_ID = env("WHATSAPP_PHONE_NUMBER_ID", default="")
+WHATSAPP_OTP_TEMPLATE = env("WHATSAPP_OTP_TEMPLATE", default="phone_verification")
+WHATSAPP_TEMPLATE_LANG = env("WHATSAPP_TEMPLATE_LANG", default="ar")
+PHONE_CODE_TTL_SECONDS = 600
+PHONE_CODE_RESEND_SECONDS = 60
+PHONE_CODE_MAX_ATTEMPTS = 5
+PHONE_CODES_PER_HOUR = 5  # per customer and, separately, per phone number (across businesses)
 
 # AI assistant
 AI_PROVIDER = env("AI_PROVIDER", default="anthropic")

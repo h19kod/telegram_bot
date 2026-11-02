@@ -61,6 +61,7 @@ Conventions (apply to every model unless noted):
 | customer_cancel_window_min | int, default 5 |
 | auto_reject_after_min | int, nullable |
 | allow_order_notes | bool |
+| require_verified_phone | bool, default true | checkout needs a verified phone (only while a WhatsApp sender is configured) |
 | payment_methods | array enum (`cash_on_delivery`, `pay_at_pickup`) |
 | ai_enabled | bool |
 | ai_persona_note | text (owner-written tone/rules, ≤ 1000 chars) |
@@ -144,9 +145,14 @@ Default role permissions:
 | telegram_username, first_name, last_name | | from Telegram, refreshed |
 | full_name | varchar | as given at checkout |
 | phone | E.164, nullable | last confirmed phone |
+| phone_verified_at | timestamp, nullable | set only when `phone` was proven (WhatsApp code or own Telegram contact); cleared when the phone changes |
 | language | `ar`/`en` | |
 | is_blocked | bool + reason | business can block abusive customers |
 | first_order_at, last_order_at, orders_count, total_spent | denormalised stats | updated in order service |
+
+**PhoneVerification** (T) — customer FK, phone (E.164), code_hash (HMAC-SHA256 of the 6-digit code;
+the code itself is never stored), expires_at (10 min), attempts (max 5), verified_at. A new code
+expires the previous ones.
 
 **CustomerAddress** (T) — customer FK, label (home/work/other), zone FK, area, street, landmark, building/floor, location lat/lng, is_default.
 

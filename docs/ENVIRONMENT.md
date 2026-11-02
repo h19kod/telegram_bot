@@ -70,6 +70,24 @@ encrypted with `FIELD_ENCRYPTION_KEYS` and never returned by any API.
 | `AI_TIMEOUT_SECONDS` | `45` | Per request; on timeout the bot falls back to menu search |
 | `AI_MAX_OUTPUT_TOKENS` | `16000` | Per response cap |
 
+## WhatsApp phone verification (optional)
+
+Customers confirm their phone with a 6-digit code sent over WhatsApp before ordering (when the
+business keeps *Require verified phone* on). In the bot, sharing the Telegram contact also counts
+as verified. With `WHATSAPP_PROVIDER=disabled` verification is off everywhere.
+
+| Variable | Default | Description |
+|---|---|---|
+| `WHATSAPP_PROVIDER` | `disabled` | `cloud` (Meta WhatsApp Cloud API), `console` (log codes, DEBUG only), `memory` (tests), `disabled` |
+| `WHATSAPP_TOKEN` | — | Permanent system-user access token with `whatsapp_business_messaging` |
+| `WHATSAPP_PHONE_NUMBER_ID` | — | Sender phone number ID from WhatsApp Manager |
+| `WHATSAPP_OTP_TEMPLATE` | `phone_verification` | Approved template of category *Authentication* with a copy-code button |
+| `WHATSAPP_TEMPLATE_LANG` | `ar` | Language of the template (an `en` translation is used for English customers) |
+| `WHATSAPP_API_BASE` | `https://graph.facebook.com/v22.0` | Graph API base URL (version) |
+
+Codes expire after 10 minutes, allow 5 attempts, can be resent after 60 s, and are capped at 5 per
+hour per customer and per phone number. Only an HMAC of each code is stored.
+
 ## Monitoring
 
 `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_TRACES_SAMPLE_RATE` (backend); `SENTRY_DSN` (bot).

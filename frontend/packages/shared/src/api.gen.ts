@@ -1902,6 +1902,39 @@ export interface paths {
         patch: operations["store_me_addresses_partial_update"];
         trace?: never;
     };
+    "/api/v1/store/{slug}/me/phone/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Send a WhatsApp code to prove the customer owns the number. */
+        post: operations["store_me_phone_code_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/store/{slug}/me/phone/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["store_me_phone_confirm_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/store/{slug}/orders": {
         parameters: {
             query?: never;
@@ -2353,6 +2386,7 @@ export interface components {
             last_name: string;
             telegram_username: string;
             readonly phone: string;
+            readonly phone_verified: boolean;
             language: components["schemas"]["LanguageEnum"];
             is_blocked: boolean;
             blocked_reason: string;
@@ -3114,6 +3148,7 @@ export interface components {
             customer_cancel_window_min?: number;
             auto_reject_after_min?: number | null;
             allow_order_notes?: boolean;
+            require_verified_phone?: boolean;
             payment_methods?: components["schemas"]["PaymentMethodsEnum"][];
             ai_enabled?: boolean;
             ai_persona_note?: string;
@@ -3200,6 +3235,20 @@ export interface components {
          * @enum {string}
          */
         PermissionsEnum: "orders.view" | "orders.view_assigned_only" | "orders.receive_notifications" | "orders.transition.confirmed" | "orders.transition.rejected" | "orders.transition.preparing" | "orders.transition.ready" | "orders.transition.out_for_delivery" | "orders.transition.delivered" | "orders.cancel" | "orders.assign_driver" | "catalog.view" | "catalog.edit" | "catalog.edit_prices" | "customers.view" | "customers.view_pii" | "customers.block" | "staff.manage" | "delivery.manage" | "reports.view" | "reports.export" | "settings.edit" | "telegram.edit" | "billing.manage" | "ai.manage";
+        PhoneCodeConfirmRequest: {
+            code: string;
+        };
+        PhoneCodeRequestRequest: {
+            phone: string;
+        };
+        PhoneCodeSent: {
+            /** @description E.164 number the code was sent to */
+            phone: string;
+            /** @description Seconds */
+            expires_in: number;
+            /** @description Seconds before another code may be requested */
+            resend_in: number;
+        };
         Plan: {
             /** Format: uuid */
             readonly id: string;
@@ -3469,6 +3518,9 @@ export interface components {
             customer_cancel_window_min: number;
             auto_reject_after_min: number | null;
             allow_order_notes: boolean;
+            require_verified_phone: boolean;
+            /** @description A WhatsApp sender is configured on the platform */
+            readonly phone_verification_available: boolean;
             payment_methods: components["schemas"]["PaymentMethodsEnum"][];
             ai_enabled: boolean;
             ai_persona_note: string;
@@ -3522,6 +3574,7 @@ export interface components {
             default_language: components["schemas"]["LanguageEnum"];
             is_open: boolean;
             is_active: boolean;
+            phone_verification_required: boolean;
             accepts_delivery: boolean;
             accepts_pickup: boolean;
             /** @description Minor units */
@@ -3540,6 +3593,7 @@ export interface components {
             first_name: string;
             full_name: string;
             phone: string;
+            phone_verified: boolean;
             language: components["schemas"]["LanguageEnum"];
             orders_count: number;
         };
@@ -9834,6 +9888,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Address"];
+                };
+            };
+            /** @description Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    store_me_phone_code_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhoneCodeRequestRequest"];
+                "multipart/form-data": components["schemas"]["PhoneCodeRequestRequest"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhoneCodeSent"];
+                };
+            };
+            /** @description Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    store_me_phone_confirm_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhoneCodeConfirmRequest"];
+                "multipart/form-data": components["schemas"]["PhoneCodeConfirmRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreMe"];
                 };
             };
             /** @description Error */

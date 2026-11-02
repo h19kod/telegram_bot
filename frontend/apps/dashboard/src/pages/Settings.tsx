@@ -61,6 +61,11 @@ export function SettingsPage() {
             <Field label={t("cancel_window")} error={errs.customer_cancel_window_min}><Input inputMode="numeric" value={s.customer_cancel_window_min} onChange={(e) => setS({ ...s, customer_cancel_window_min: Number(e.target.value) || 0 })} /></Field>
             <Field label={t("auto_reject")} error={errs.auto_reject_after_min}><Input inputMode="numeric" value={s.auto_reject_after_min ?? ""} onChange={(e) => setS({ ...s, auto_reject_after_min: e.target.value ? Number(e.target.value) : null })} /></Field>
             <div className="flex items-end"><Toggle checked={s.allow_order_notes} onChange={(v) => setS({ ...s, allow_order_notes: v })} label={t("allow_notes")} /></div>
+            <div className="sm:col-span-2 rounded-lg bg-bg2/60 p-3">
+              <Toggle checked={s.require_verified_phone} onChange={(v) => setS({ ...s, require_verified_phone: v })} label={t("require_verified_phone")} />
+              <p className="mt-1.5 text-[12px] text-hint">{t("require_verified_phone_hint")}</p>
+              {s.require_verified_phone && !s.phone_verification_available && <p role="status" className="mt-1.5 text-[12px] text-warn">⚠ {t("whatsapp_not_configured")}</p>}
+            </div>
             <Field label={t("payment_methods")} error={errs.payment_methods} className="sm:col-span-2"><div className="flex gap-4">
               <Toggle checked={s.payment_methods.includes("cash_on_delivery")} onChange={(v) => pm("cash_on_delivery", v)} label={t("cod")} />
               <Toggle checked={s.payment_methods.includes("pay_at_pickup")} onChange={(v) => pm("pay_at_pickup", v)} label={t("pay_pickup")} /></div></Field>

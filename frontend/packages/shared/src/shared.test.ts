@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { formatMoney } from "./format";
-import { looksLikeIraqiMobile, toLatinDigits } from "./phone";
+import { iraqiMobileE164, localIraqiPhone, looksLikeIraqiMobile, toLatinDigits } from "./phone";
 
 describe("formatMoney", () => {
   it("formats IQD without decimals", () => {
@@ -19,4 +19,11 @@ describe("phone", () => {
   it.each(["", "0770123", "06701234567", "abc"])("rejects %s",
     (v) => expect(looksLikeIraqiMobile(v)).toBe(false));
   it("converts Arabic-Indic digits", () => expect(toLatinDigits("٠١٢٣")).toBe("0123"));
+  it("normalises to E.164 like the server", () => {
+    expect(iraqiMobileE164("0770 123 4567")).toBe("+9647701234567");
+    expect(iraqiMobileE164("٠٧٨٠١١١٢٢٣٣")).toBe("+9647801112233");
+    expect(iraqiMobileE164("009647701234567")).toBe("+9647701234567");
+    expect(iraqiMobileE164("0770")).toBeNull();
+    expect(localIraqiPhone("+9647701234567")).toBe("07701234567");
+  });
 });

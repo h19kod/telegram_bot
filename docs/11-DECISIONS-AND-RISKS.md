@@ -49,6 +49,16 @@ follow Telegram's API directly and avoid dependency churn.
 **ADR-014 — Django Channels for realtime** dashboard updates (WebSocket via Redis channel layer), served
 with Gunicorn + Uvicorn workers (ASGI), matching the requested Gunicorn deployment.
 
+**ADR-015 — Customer phones are verified before ordering (2026-11-02).** Fake numbers waste
+delivery runs, so checkout requires a *verified* phone when the business keeps
+`require_verified_phone` on (default). Proof is a 6-digit WhatsApp code sent with the Meta Cloud
+API authentication template (Iraqi customers use WhatsApp far more than SMS, and Meta's
+authentication messages are cheaper than SMS OTP), or — in the bot — the user's own Telegram
+contact, which Telegram itself vouches for. Only an HMAC of each code is stored; codes expire in
+10 min, allow 5 attempts, and are rate-limited per customer and per number across businesses
+(anti SMS-pumping). One platform sender number serves all businesses. With no sender configured
+(`WHATSAPP_PROVIDER=disabled`) verification is off rather than blocking every order.
+
 ## Risk register
 
 | # | Risk | Likelihood | Impact | Mitigation |

@@ -1,10 +1,11 @@
-import { looksLikeIraqiMobile, newIdempotencyKey } from "@sop/shared";
+import { localIraqiPhone, looksLikeIraqiMobile, newIdempotencyKey } from "@sop/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 
 import { ApiError, type CheckoutBody } from "../api";
 import { ActionBar, Page } from "../components/Layout";
+import { PhoneVerify, useIsVerified } from "../components/PhoneVerify";
 import { Button, Card, cx, Field, Input, Segmented, Skeleton, TextArea } from "../components/ui";
 import { useCart } from "../hooks/queries";
 import { useMainButton } from "../hooks/telegram";
@@ -25,11 +26,12 @@ export function CheckoutPage() {
   const [form, setForm] = useState<CheckoutBody>({
     fulfilment: business.accepts_delivery ? "delivery" : "pickup",
     customer_name: customer.full_name || customer.first_name || "",
-    customer_phone: customer.phone ? `0${customer.phone.slice(4)}` : "",
+    customer_phone: customer.phone ? localIraqiPhone(customer.phone) : "",
     zone_id: null, address_area: "", address_street: "", address_landmark: "",
     address_building: "", notes: "",
   });
   const [errors, setErrors] = useState<Errors>({});
+  const phoneVerified = useIsVerified(form.customer_phone);
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState("");
   // One key per checkout screen: retries and double taps cannot create two orders.
@@ -80,6 +82,9 @@ export function CheckoutPage() {
     const e: Errors = {};
     if (form.customer_name.trim().length < 2) e.customer_name = t("required_field");
     if (!looksLikeIraqiMobile(form.customer_phone)) e.customer_phone = t("invalid_phone");
+    else if (business.phone_verification_required && !phoneVerified) {
+      e.customer_phone = t("verify_phone_first");
+    }
     if (form.fulfilment === "delivery") {
       if (!form.zone_id) e.zone_id = t("required_field");
       if (!form.address_area?.trim()) e.address_area = t("required_field");
@@ -117,6 +122,7 @@ export function CheckoutPage() {
               invalid={Boolean(errors.customer_phone)} className="text-start"
               onChange={(e) => set("customer_phone", e.target.value)} />
           </Field>
+          <PhoneVerify phone={form.customer_phone} />
         </Card>
 
         {business.accepts_delivery && business.accepts_pickup && (

@@ -15,6 +15,7 @@ from apps.accounts.services import complete_link, user_for_telegram
 from apps.businesses.models import Business, TelegramBot
 from apps.businesses.services import default_branch
 from apps.categories.models import Category
+from apps.customers import services as customer_svc
 from apps.customers.models import Customer
 from apps.customers.services import upsert_from_telegram
 from apps.delivery.models import DeliveryZone
@@ -150,6 +151,7 @@ class SessionView(InternalView):
                     "language": customer.language,
                     "full_name": customer.full_name,
                     "phone": customer.phone,
+                    "phone_verified": customer.phone_verified,
                     "is_blocked": customer.is_blocked,
                 },
                 "is_staff": is_staff,
@@ -360,6 +362,39 @@ class CustomerMeView(CustomerScoped):
             customer.language = lang
             customer.save(update_fields=["language", "updated_at"])
         return Response({"language": customer.language})
+
+
+class PhoneCodeView(CustomerScoped):
+    """Send a WhatsApp code for a number the user typed in the bot."""
+
+    def post(self, request: Request, bot_id: uuid.UUID, tg_id: int) -> Response:
+        _, customer = self.ctx(request, bot_id, tg_id)
+        phone = serializers.CharField(max_length=32).run_validation(request.data.get("phone"))
+        sent = customer_svc.request_phone_code(customer, phone)
+        return Response(
+            {"phone": sent.phone, "expires_in": sent.expires_in, "resend_in": sent.resend_in},
+            status=202,
+        )
+
+
+class PhoneConfirmView(CustomerScoped):
+    def post(self, request: Request, bot_id: uuid.UUID, tg_id: int) -> Response:
+        _, customer = self.ctx(request, bot_id, tg_id)
+        code = serializers.CharField(max_length=12).run_validation(request.data.get("code"))
+        customer = customer_svc.confirm_phone_code(customer, code)
+        return Response({"phone": customer.phone, "phone_verified": customer.phone_verified})
+
+
+class PhoneContactView(CustomerScoped):
+    """The bot checked that the shared Telegram contact is the sender's own (contact.user_id)."""
+
+    def post(self, request: Request, bot_id: uuid.UUID, tg_id: int) -> Response:
+        _, customer = self.ctx(request, bot_id, tg_id)
+        if request.data.get("contact_user_id") != tg_id:
+            raise DomainError("invalid_phone", status_code=400)
+        phone = serializers.CharField(max_length=32).run_validation(request.data.get("phone"))
+        customer = customer_svc.verify_phone_by_telegram_contact(customer, phone)
+        return Response({"phone": customer.phone, "phone_verified": customer.phone_verified})
 
 
 class SupportView(CustomerScoped):

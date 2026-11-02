@@ -63,6 +63,25 @@ MESSAGES: dict[str, tuple[str, str]] = {
         "Order is below this coupon's minimum",
     ),
     "coupon_exhausted": ("كود الخصم مستخدم بالكامل", "This coupon has been used up"),
+    "phone_not_verified": (
+        "لازم تأكد رقم هاتفك برمز الواتساب قبل الطلب",
+        "Confirm your phone number with the WhatsApp code before ordering",
+    ),
+    "verification_unavailable": (
+        "التحقق من الرقم غير متاح حالياً",
+        "Phone verification is unavailable",
+    ),
+    "code_resend_too_soon": (
+        "انتظر شوية قبل ما تطلب رمز جديد",
+        "Wait a moment before requesting a new code",
+    ),
+    "too_many_codes": (
+        "طلبت رموز كثيرة، حاول بعد ساعة",
+        "Too many codes requested, try again in an hour",
+    ),
+    "code_expired": ("الرمز منتهي، اطلب رمز جديد", "The code has expired, request a new one"),
+    "invalid_code": ("الرمز غير صحيح", "Incorrect code"),
+    "too_many_attempts": ("محاولات كثيرة، اطلب رمز جديد", "Too many attempts, request a new code"),
     "ai_unavailable": ("المساعد الذكي غير متاح حالياً", "The AI assistant is unavailable"),
 }
 

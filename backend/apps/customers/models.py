@@ -14,6 +14,8 @@ class Customer(TenantModel):
     last_name = models.CharField(max_length=128, blank=True)
     full_name = models.CharField(max_length=150, blank=True)
     phone = models.CharField(max_length=16, blank=True)
+    # Set only when `phone` was proven: a WhatsApp code or the user's own Telegram contact.
+    phone_verified_at = models.DateTimeField(null=True, blank=True)
     language = models.CharField(max_length=2, choices=Language.choices, default=Language.AR)
     is_blocked = models.BooleanField(default=False)
     blocked_reason = models.CharField(max_length=200, blank=True)
@@ -41,6 +43,27 @@ class Customer(TenantModel):
             or " ".join(p for p in (self.first_name, self.last_name) if p)
             or (f"@{self.telegram_username}" if self.telegram_username else "")
         )
+
+    @property
+    def phone_verified(self) -> bool:
+        return bool(self.phone and self.phone_verified_at)
+
+
+class PhoneVerification(TenantModel):
+    """One WhatsApp code sent to `phone` for `customer`. Only an HMAC of the code is stored."""
+
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="+")
+    phone = models.CharField(max_length=16)
+    code_hash = models.CharField(max_length=64)
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+    verified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["customer", "created_at"]),
+            models.Index(fields=["phone", "created_at"]),
+        ]
 
 
 class AddressLabel(models.TextChoices):

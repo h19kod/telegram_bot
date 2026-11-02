@@ -10168,6 +10168,127 @@
                 }
             }
         },
+        "/api/v1/store/{slug}/me/phone/code": {
+            "post": {
+                "operationId": "store_me_phone_code_create",
+                "description": "Send a WhatsApp code to prove the customer owns the number.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "storefront"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneCodeRequestRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneCodeRequestRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "customerToken": []
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PhoneCodeSent"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "4XX": {
+                        "description": "Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/store/{slug}/me/phone/confirm": {
+            "post": {
+                "operationId": "store_me_phone_confirm_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "storefront"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneCodeConfirmRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneCodeConfirmRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "customerToken": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StoreMe"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "4XX": {
+                        "description": "Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/store/{slug}/orders": {
             "get": {
                 "operationId": "store_orders_list",
@@ -11725,6 +11846,10 @@
                         "type": "string",
                         "readOnly": true
                     },
+                    "phone_verified": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
                     "language": {
                         "$ref": "#/components/schemas/LanguageEnum"
                     },
@@ -11776,6 +11901,7 @@
                     "last_order_at",
                     "orders_count",
                     "phone",
+                    "phone_verified",
                     "telegram_username",
                     "total_spent"
                 ]
@@ -14322,6 +14448,9 @@
                     "allow_order_notes": {
                         "type": "boolean"
                     },
+                    "require_verified_phone": {
+                        "type": "boolean"
+                    },
                     "payment_methods": {
                         "type": "array",
                         "items": {
@@ -14531,6 +14660,54 @@
                 ],
                 "type": "string",
                 "description": "* `orders.view` - orders.view\n* `orders.view_assigned_only` - orders.view_assigned_only\n* `orders.receive_notifications` - orders.receive_notifications\n* `orders.transition.confirmed` - orders.transition.confirmed\n* `orders.transition.rejected` - orders.transition.rejected\n* `orders.transition.preparing` - orders.transition.preparing\n* `orders.transition.ready` - orders.transition.ready\n* `orders.transition.out_for_delivery` - orders.transition.out_for_delivery\n* `orders.transition.delivered` - orders.transition.delivered\n* `orders.cancel` - orders.cancel\n* `orders.assign_driver` - orders.assign_driver\n* `catalog.view` - catalog.view\n* `catalog.edit` - catalog.edit\n* `catalog.edit_prices` - catalog.edit_prices\n* `customers.view` - customers.view\n* `customers.view_pii` - customers.view_pii\n* `customers.block` - customers.block\n* `staff.manage` - staff.manage\n* `delivery.manage` - delivery.manage\n* `reports.view` - reports.view\n* `reports.export` - reports.export\n* `settings.edit` - settings.edit\n* `telegram.edit` - telegram.edit\n* `billing.manage` - billing.manage\n* `ai.manage` - ai.manage"
+            },
+            "PhoneCodeConfirmRequest": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 12
+                    }
+                },
+                "required": [
+                    "code"
+                ]
+            },
+            "PhoneCodeRequestRequest": {
+                "type": "object",
+                "properties": {
+                    "phone": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 32
+                    }
+                },
+                "required": [
+                    "phone"
+                ]
+            },
+            "PhoneCodeSent": {
+                "type": "object",
+                "properties": {
+                    "phone": {
+                        "type": "string",
+                        "description": "E.164 number the code was sent to"
+                    },
+                    "expires_in": {
+                        "type": "integer",
+                        "description": "Seconds"
+                    },
+                    "resend_in": {
+                        "type": "integer",
+                        "description": "Seconds before another code may be requested"
+                    }
+                },
+                "required": [
+                    "expires_in",
+                    "phone",
+                    "resend_in"
+                ]
             },
             "Plan": {
                 "type": "object",
@@ -15568,6 +15745,14 @@
                     "allow_order_notes": {
                         "type": "boolean"
                     },
+                    "require_verified_phone": {
+                        "type": "boolean"
+                    },
+                    "phone_verification_available": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "description": "A WhatsApp sender is configured on the platform"
+                    },
                     "payment_methods": {
                         "type": "array",
                         "items": {
@@ -15606,6 +15791,8 @@
                     "min_order_amount",
                     "notification_chat_ids",
                     "payment_methods",
+                    "phone_verification_available",
+                    "require_verified_phone",
                     "welcome_message_ar",
                     "welcome_message_en"
                 ]
@@ -15744,6 +15931,9 @@
                     "is_active": {
                         "type": "boolean"
                     },
+                    "phone_verification_required": {
+                        "type": "boolean"
+                    },
                     "accepts_delivery": {
                         "type": "boolean"
                     },
@@ -15805,6 +15995,7 @@
                     "name_en",
                     "payment_methods",
                     "phone",
+                    "phone_verification_required",
                     "slug",
                     "welcome_message"
                 ]
@@ -15825,6 +16016,9 @@
                     "phone": {
                         "type": "string"
                     },
+                    "phone_verified": {
+                        "type": "boolean"
+                    },
                     "language": {
                         "$ref": "#/components/schemas/LanguageEnum"
                     },
@@ -15838,7 +16032,8 @@
                     "id",
                     "language",
                     "orders_count",
-                    "phone"
+                    "phone",
+                    "phone_verified"
                 ]
             },
             "StoreOption": {

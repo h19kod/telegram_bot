@@ -1,10 +1,11 @@
-import { looksLikeIraqiMobile } from "@sop/shared";
+import { localIraqiPhone, looksLikeIraqiMobile } from "@sop/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import { ApiError } from "../api";
 import { Page } from "../components/Layout";
+import { PhoneVerify } from "../components/PhoneVerify";
 import { Button, Card, Field, Input, Segmented, TextArea } from "../components/ui";
 import type { TKey } from "../i18n";
 import { useSession } from "../session";
@@ -14,7 +15,7 @@ export function ProfilePage() {
   const { api, customer, setCustomer, t, lang, setLang } = useSession();
   const qc = useQueryClient();
   const [name, setName] = useState(customer.full_name || customer.first_name);
-  const [phone, setPhone] = useState(customer.phone ? `0${customer.phone.slice(4)}` : "");
+  const [phone, setPhone] = useState(customer.phone ? localIraqiPhone(customer.phone) : "");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const addresses = useQuery({ queryKey: ["addresses"], queryFn: api.addresses });
@@ -45,6 +46,7 @@ export function ProfilePage() {
             <Input value={phone} inputMode="tel" dir="ltr" className="text-start"
               onChange={(e) => setPhone(e.target.value)} />
           </Field>
+          <PhoneVerify phone={phone} />
           {err && <p role="alert" className="text-[13px] text-danger">{err}</p>}
           <Button className="w-full" disabled={save.isPending || (Boolean(phone) &&
             !looksLikeIraqiMobile(phone))} onClick={() => { setMsg(null); save.mutate(); }}>

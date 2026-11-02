@@ -17,6 +17,7 @@ from rest_framework.views import APIView
 from apps.businesses.models import Business
 from apps.businesses.services import bot_for_business, default_branch
 from apps.categories.models import Category
+from apps.customers import services as customer_svc
 from apps.customers.models import AddressLabel, CustomerAddress
 from apps.customers.services import upsert_from_telegram
 from apps.delivery.models import DeliveryZone
@@ -36,6 +37,9 @@ from apps.storefront.auth import CustomerTokenAuthentication, IsStoreCustomer, i
 from apps.storefront.schema import (
     CancelSerializer,
     CartResponseSerializer,
+    PhoneCodeConfirmSerializer,
+    PhoneCodeRequestSerializer,
+    PhoneCodeSentSerializer,
     ProductPageSerializer,
     QuantitySerializer,
     QuoteResponseSerializer,
@@ -152,6 +156,7 @@ def _me(customer) -> dict[str, Any]:  # type: ignore[no-untyped-def]
         "first_name": customer.first_name,
         "full_name": customer.full_name,
         "phone": customer.phone,
+        "phone_verified": customer.phone_verified,
         "language": customer.language,
         "orders_count": customer.orders_count,
     }
@@ -406,10 +411,49 @@ class MeView(StoreView):
     def patch(self, request: Request, slug: str) -> Response:
         s = MeSerializer(data=request.data, partial=True)
         s.is_valid(raise_exception=True)
-        for k, v in s.validated_data.items():
+        data = dict(s.validated_data)
+        if "phone" in data:  # a typed number is unproven: verification only via /me/phone
+            customer_svc.set_unverified_phone(self.customer, data.pop("phone"))
+        for k, v in data.items():
             setattr(self.customer, k, v)
-        self.customer.save(update_fields=[*s.validated_data, "updated_at"])
+        if data:
+            self.customer.save(update_fields=[*data, "updated_at"])
         return Response(_me(self.customer))
+
+
+class PhoneCodeThrottle(StoreThrottle):
+    scope = "phone_code"
+
+
+@extend_schema(
+    tags=["storefront"],
+    request=PhoneCodeRequestSerializer,
+    responses={202: PhoneCodeSentSerializer},
+)
+class PhoneCodeView(StoreView):
+    """Send a WhatsApp code to prove the customer owns the number."""
+
+    throttle_classes = [PhoneCodeThrottle]
+
+    def post(self, request: Request, slug: str) -> Response:
+        s = PhoneCodeRequestSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        sent = customer_svc.request_phone_code(self.customer, s.validated_data["phone"])
+        return Response(
+            {"phone": sent.phone, "expires_in": sent.expires_in, "resend_in": sent.resend_in},
+            status=202,
+        )
+
+
+@extend_schema(tags=["storefront"], request=PhoneCodeConfirmSerializer, responses=StoreMeSerializer)
+class PhoneConfirmView(StoreView):
+    throttle_classes = [PhoneCodeThrottle]
+
+    def post(self, request: Request, slug: str) -> Response:
+        s = PhoneCodeConfirmSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        customer = customer_svc.confirm_phone_code(self.customer, s.validated_data["code"])
+        return Response(_me(customer))
 
 
 class AddressSerializer(serializers.ModelSerializer):

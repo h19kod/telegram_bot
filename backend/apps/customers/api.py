@@ -17,6 +17,7 @@ from core.tenancy import IsBusinessMember, require
 class CustomerSerializer(serializers.ModelSerializer):
     phone = serializers.SerializerMethodField()
     display_name = serializers.CharField(read_only=True)
+    phone_verified = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Customer
@@ -28,6 +29,7 @@ class CustomerSerializer(serializers.ModelSerializer):
             "last_name",
             "telegram_username",
             "phone",
+            "phone_verified",
             "language",
             "is_blocked",
             "blocked_reason",

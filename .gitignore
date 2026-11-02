@@ -32,3 +32,6 @@ media/
 .idea/
 .DS_Store
 backups/
+
+# Celery beat local schedule
+celerybeat-schedule*

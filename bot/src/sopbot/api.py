@@ -219,6 +219,32 @@ class BackendClient:
             "PATCH", self._c(bot_id, tg_id, "me"), {"language": lang}, params={"business": business}
         )
 
+    async def phone_code(self, bot_id: str, tg_id: int, business: str | None, phone: str) -> dict:
+        return await self.request(
+            "POST",
+            self._c(bot_id, tg_id, "phone/code"),
+            {"phone": phone},
+            params={"business": business},
+        )
+
+    async def phone_confirm(self, bot_id: str, tg_id: int, business: str | None, code: str) -> dict:
+        return await self.request(
+            "POST",
+            self._c(bot_id, tg_id, "phone/confirm"),
+            {"code": code},
+            params={"business": business},
+        )
+
+    async def phone_contact(
+        self, bot_id: str, tg_id: int, business: str | None, phone: str, contact_user_id: int
+    ) -> dict:
+        return await self.request(
+            "POST",
+            self._c(bot_id, tg_id, "phone/contact"),
+            {"phone": phone, "contact_user_id": contact_user_id},
+            params={"business": business},
+        )
+
     async def support(self, bot_id: str, tg_id: int, business: str | None, message: str) -> dict:
         return await self.request(
             "POST",

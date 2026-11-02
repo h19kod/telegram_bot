@@ -94,7 +94,15 @@ cd frontend && npm run typecheck && npx vitest run --root packages/shared && npm
 
 Backend tests need the PostgreSQL and Redis containers running (they never use SQLite).
 
-## 7. AI assistant locally
+## 7. WhatsApp phone verification locally
+
+Set `WHATSAPP_PROVIDER=console` in `.env`: codes are not sent but written to the Celery worker log
+(`DEV WhatsApp code for +964…: 123456`). Codes go to the `default` queue. For real delivery use
+`cloud` with a Meta WhatsApp Business number and an approved *Authentication* template — see
+[ENVIRONMENT.md](ENVIRONMENT.md). In the bot, sharing your own Telegram contact verifies without a
+code.
+
+## 8. AI assistant locally
 
 Set `AI_API_KEY` (Anthropic) in `.env`, enable the assistant in the dashboard → Business settings
 (needs a plan with `ai_assistant`), then chat with the bot in free text. Without a key the bot

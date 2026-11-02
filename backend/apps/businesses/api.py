@@ -158,6 +158,10 @@ class SettingsSerializer(serializers.ModelSerializer):
         child=serializers.IntegerField(), required=False, max_length=10
     )
 
+    phone_verification_available = serializers.SerializerMethodField(
+        help_text="A WhatsApp sender is configured on the platform"
+    )
+
     class Meta:
         model = BusinessSettings
         fields = [
@@ -165,6 +169,8 @@ class SettingsSerializer(serializers.ModelSerializer):
             "customer_cancel_window_min",
             "auto_reject_after_min",
             "allow_order_notes",
+            "require_verified_phone",
+            "phone_verification_available",
             "payment_methods",
             "ai_enabled",
             "ai_persona_note",
@@ -172,6 +178,11 @@ class SettingsSerializer(serializers.ModelSerializer):
             "welcome_message_en",
             "notification_chat_ids",
         ]
+
+    def get_phone_verification_available(self, obj: BusinessSettings) -> bool:
+        from core.whatsapp import is_enabled
+
+        return is_enabled()
 
     def validate_customer_cancel_window_min(self, v: int) -> int:
         if v > 120:

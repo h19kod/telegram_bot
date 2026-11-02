@@ -67,6 +67,13 @@ T: dict[str, dict[str, str]] = {
         "ar": "❌ الرقم مو صحيح، جرب مرة ثانية (مثال 07701234567).",
         "en": "❌ Invalid number, try again (e.g. 07701234567).",
     },
+    "code_sent": {
+        "ar": "💬 دزينا رمز من 6 أرقام على واتساب للرقم {phone}. اكتبه هنا للتأكيد.\n"
+        "أو اضغط «مشاركة رقمي» إذا رقمك نفس رقم تيليجرام.",
+        "en": "💬 We sent a 6-digit code on WhatsApp to {phone}. Type it here to confirm.\n"
+        "Or tap “Share my number” if it is your Telegram number.",
+    },
+    "phone_verified": {"ar": "✅ تم تأكيد رقمك", "en": "✅ Your number is confirmed"},
     "ask_fulfilment": {"ar": "🚚 توصيل لو استلام من المحل؟", "en": "🚚 Delivery or pickup?"},
     "delivery": {"ar": "🛵 توصيل", "en": "🛵 Delivery"},
     "pickup": {"ar": "🏪 استلام من المحل", "en": "🏪 Pickup"},

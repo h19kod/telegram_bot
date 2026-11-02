@@ -172,6 +172,12 @@ def _ai_entitled(business: Business) -> bool:
     return has_feature(business.id, "ai_assistant")
 
 
+def verification_required(business: Business) -> bool:
+    from apps.customers.services import verification_required as required
+
+    return required(business)
+
+
 def business_info(business: Business, branch: Branch) -> dict[str, Any]:
     from core.models import localized
     from core.serializers import current_lang
@@ -201,6 +207,7 @@ def business_info(business: Business, branch: Branch) -> dict[str, Any]:
         "default_language": business.default_language,
         "is_open": is_open(branch) and business.is_active,
         "is_active": business.is_active,
+        "phone_verification_required": verification_required(business),
         "accepts_delivery": branch.accepts_delivery,
         "accepts_pickup": branch.accepts_pickup,
         "min_order_amount": cfg.min_order_amount,

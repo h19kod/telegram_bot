@@ -31,6 +31,7 @@ export type OrderStatus = S["OrderStatusEnum"];
 export type Order = S["StoreOrder"];
 export type Address = S["Address"];
 export type AddressBody = S["AddressRequest"];
+export type PhoneCodeSent = S["PhoneCodeSent"];
 type SessionResponse = S["SessionResponse"];
 
 export class StoreApi {
@@ -122,6 +123,10 @@ export class StoreApi {
   me = () => this.request<Customer>("/me");
   updateMe = (body: Partial<Pick<Customer, "full_name" | "phone" | "language">>) =>
     this.request<Customer>("/me", { method: "PATCH", body });
+  sendPhoneCode = (phone: string) =>
+    this.request<PhoneCodeSent>("/me/phone/code", { method: "POST", body: { phone } });
+  confirmPhoneCode = (code: string) =>
+    this.request<Customer>("/me/phone/confirm", { method: "POST", body: { code } });
   addresses = () => this.request<Address[]>("/me/addresses");
   addAddress = (body: AddressBody) =>
     this.request<Address>("/me/addresses", { method: "POST", body });

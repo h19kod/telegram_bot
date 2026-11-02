@@ -45,7 +45,8 @@ export function CustomersPage() {
                 <td className="px-4 py-2.5"><span className="font-medium">{c.display_name || "—"}</span>
                   {c.telegram_username && <span className="ms-1 text-[12px] text-hint" dir="ltr">@{c.telegram_username}</span>}
                   {c.is_blocked && <Badge tone="danger">{t("blocked")}</Badge>}</td>
-                <td className="px-4 py-2.5" dir="ltr">{c.phone || "—"}</td>
+                <td className="px-4 py-2.5"><span dir="ltr">{c.phone || "—"}</span>
+                  {c.phone_verified && <span className="ms-1.5 text-success" title={t("phone_verified")} aria-label={t("phone_verified")}>✓</span>}</td>
                 <td className="tabular px-4 py-2.5">{c.orders_count}</td>
                 <td className="tabular px-4 py-2.5">{money(c.total_spent)}</td>
                 <td className="tabular px-4 py-2.5 text-[13px] text-hint">{c.last_order_at ? new Date(c.last_order_at).toLocaleDateString(lang === "ar" ? "ar-IQ" : "en-GB", { numberingSystem: "latn" }) : "—"}</td>

@@ -148,6 +148,59 @@ async def test_checkout_error_is_shown_not_success(env):
 
 
 @respx.mock
+async def test_whatsapp_code_is_required_before_ordering(env):
+    dp, bot, session, redis = env
+    respx.post(f"{B}/session").mock(return_value=httpx.Response(200, json={
+        "business": {**BUSINESS, "phone_verification_required": True},
+        "customer": {"language": "ar", "full_name": "Ali", "phone": "", "phone_verified": False},
+        "is_staff": False, "mini_app_url": None}))
+    respx.get(f"{B}/customers/9001/cart").mock(return_value=httpx.Response(200, json=CART))
+    code = respx.post(f"{B}/customers/9001/phone/code").mock(return_value=httpx.Response(
+        202, json={"phone": "+9647701234567", "expires_in": 600, "resend_in": 60}))
+    confirm = respx.post(f"{B}/customers/9001/phone/confirm").mock(side_effect=[
+        httpx.Response(400, json={"error": {"code": "invalid_code", "message": "الرمز غير صحيح"}}),
+        httpx.Response(200, json={"phone": "+9647701234567", "phone_verified": True}),
+    ])
+    await feed(dp, bot, redis, msg_update("/start"))
+    await feed(dp, bot, redis, cb_update("n:checkout"))
+    await feed(dp, bot, redis, cb_update("us:name"))
+    await feed(dp, bot, redis, msg_update("07701234567"))
+    assert json.loads(code.calls[0].request.content) == {"phone": "07701234567"}
+    assert "واتساب" in session.texts()[-1]
+    await feed(dp, bot, redis, msg_update("111111"))
+    assert "غير صحيح" in session.texts()[-1]
+    await feed(dp, bot, redis, msg_update("482913"))
+    assert json.loads(confirm.calls[1].request.content) == {"code": "482913"}
+    assert any("تم تأكيد" in x for x in session.texts())
+    assert "توصيل" in session.texts()[-1]  # moved on to fulfilment
+
+
+@respx.mock
+async def test_own_telegram_contact_verifies_without_code(env):
+    from aiogram.types import Contact
+
+    dp, bot, session, redis = env
+    respx.post(f"{B}/session").mock(return_value=httpx.Response(200, json={
+        "business": {**BUSINESS, "phone_verification_required": True},
+        "customer": {"language": "ar", "full_name": "Ali", "phone": "", "phone_verified": False},
+        "is_staff": False, "mini_app_url": None}))
+    respx.get(f"{B}/customers/9001/cart").mock(return_value=httpx.Response(200, json=CART))
+    contact = respx.post(f"{B}/customers/9001/phone/contact").mock(return_value=httpx.Response(
+        200, json={"phone": "+9647701234567", "phone_verified": True}))
+    await feed(dp, bot, redis, msg_update("/start"))
+    await feed(dp, bot, redis, cb_update("n:checkout"))
+    await feed(dp, bot, redis, cb_update("us:name"))
+    other = Contact(phone_number="9647700000000", first_name="X", user_id=1)
+    await feed(dp, bot, redis, msg_update(contact=other))
+    assert not contact.called
+    own = Contact(phone_number="9647701234567", first_name="Ali", user_id=9001)
+    await feed(dp, bot, redis, msg_update(contact=own))
+    assert json.loads(contact.calls[0].request.content) == {
+        "phone": "+9647701234567", "contact_user_id": 9001}
+    assert "توصيل" in session.texts()[-1]
+
+
+@respx.mock
 async def test_staff_button_duplicate_and_unlinked(env):
     dp, bot, session, redis = env
     route = respx.post(f"{B}/staff/transition")

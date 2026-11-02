@@ -14,6 +14,7 @@ from django.utils import timezone
 
 from apps.businesses.models import Branch, Business, BusinessSettings, PaymentMethod
 from apps.businesses.services import ensure_can_take_orders, is_open
+from apps.customers import services as customers
 from apps.customers.models import Customer
 from apps.delivery.models import DeliveryZone
 from apps.notifications.outbox import enqueue
@@ -35,7 +36,7 @@ from apps.orders.realtime import broadcast
 from apps.orders.services.cart import PricedCart, get_active_cart, price_cart
 from apps.products.models import Product
 from apps.subscriptions import services as entitlements
-from core.errors import DomainError
+from core.errors import DomainError, message_for
 from core.phone import InvalidPhoneNumber, normalize_phone
 
 
@@ -113,6 +114,12 @@ def _validate(
             phone = normalize_phone(data.customer_phone)
         except InvalidPhoneNumber:
             raise DomainError("invalid_phone", status_code=400) from None
+        if customers.verification_required(business) and not customers.is_phone_verified(
+            customer, phone
+        ):
+            raise DomainError(
+                "phone_not_verified", {"customer_phone": [message_for("phone_not_verified")]}, 400
+            )
 
     payment = data.payment_method or (
         PaymentMethod.CASH_ON_DELIVERY
@@ -302,9 +309,12 @@ def place_order(customer: Customer, branch: Branch, data: CheckoutInput) -> tupl
             actor_customer=customer,
             source=EventSource.CUSTOMER,
         )
+        # A different (unverified) number replaces the old one and drops its verification.
+        verified = {} if q.phone == customer.phone else {"phone_verified_at": None}
         Customer.objects.filter(pk=customer.pk).update(
             full_name=order.customer_name,
             phone=q.phone,
+            **verified,
             orders_count=F("orders_count") + 1,
             last_order_at=now,
         )

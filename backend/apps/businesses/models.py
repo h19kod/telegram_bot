@@ -148,6 +148,8 @@ class BusinessSettings(TenantModel):
     customer_cancel_window_min = models.PositiveIntegerField(default=5)
     auto_reject_after_min = models.PositiveIntegerField(null=True, blank=True)
     allow_order_notes = models.BooleanField(default=True)
+    # Customers must confirm their phone (WhatsApp code / Telegram contact) before ordering.
+    require_verified_phone = models.BooleanField(default=True)
     payment_methods = ArrayField(
         models.CharField(max_length=32, choices=PaymentMethod.choices),
         default=default_payment_methods,

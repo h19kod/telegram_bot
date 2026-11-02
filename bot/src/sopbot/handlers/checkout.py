@@ -41,6 +41,7 @@ router = Router(name="checkout")
 class Checkout(StatesGroup):
     name = State()
     phone = State()
+    phone_code = State()
     fulfilment = State()
     zone = State()
     area = State()
@@ -78,7 +79,9 @@ async def begin(cb: CallbackQuery, ctx: Ctx, state: FSMContext) -> None:
         co={
             "known_name": customer.get("full_name") or "",
             "known_phone": customer.get("phone") or "",
+            "known_verified": bool(customer.get("phone_verified")),
             "info": {
+                "verify_phone": bool(info.get("phone_verification_required")),
                 "accepts_delivery": info["accepts_delivery"],
                 "accepts_pickup": info["accepts_pickup"],
                 "allow_notes": info["allow_order_notes"],
@@ -122,15 +125,29 @@ async def _after_name(message: Message, ctx: Ctx, state: FSMContext, name: str) 
 async def phone_use(cb: CallbackQuery, ctx: Ctx, state: FSMContext) -> None:
     await answer_cb(cb)
     co = await _co(state)
+    if co["info"].get("verify_phone") and not co.get("known_verified"):
+        await _send_code(cb.message, ctx, state, co["known_phone"])
+        return
     await _after_phone(cb.message, ctx, state, co["known_phone"])
 
 
 @router.message(Checkout.phone, F.contact)
+@router.message(Checkout.phone_code, F.contact)
 async def phone_contact(message: Message, ctx: Ctx, state: FSMContext) -> None:
-    if message.contact.user_id and message.contact.user_id != message.from_user.id:
+    contact = message.contact
+    if contact.user_id != message.from_user.id:  # only the user's own contact proves the number
         await message.answer(t("bad_phone", ctx.lang))
         return
-    await _after_phone(message, ctx, state, message.contact.phone_number)
+    raw = contact.phone_number
+    phone = raw if raw.startswith("+") else f"+{raw}"
+    try:
+        res = await ctx.api.phone_contact(
+            ctx.bot_id, ctx.tg_id, ctx.business, phone, contact.user_id
+        )
+    except ApiError as e:
+        await message.answer(e.message or t("bad_phone", ctx.lang))
+        return
+    await _after_phone(message, ctx, state, res["phone"])
 
 
 @router.message(Checkout.phone, F.text)
@@ -139,7 +156,43 @@ async def phone_text(message: Message, ctx: Ctx, state: FSMContext) -> None:
     if len(digits) < 10:
         await message.answer(t("bad_phone", ctx.lang))
         return
+    co = await _co(state)
+    if co["info"].get("verify_phone"):
+        await _send_code(message, ctx, state, message.text.strip())
+        return
     await _after_phone(message, ctx, state, message.text.strip())
+
+
+async def _send_code(message: Message, ctx: Ctx, state: FSMContext, phone: str) -> None:
+    try:
+        res = await ctx.api.phone_code(ctx.bot_id, ctx.tg_id, ctx.business, phone)
+    except ApiError as e:
+        await message.answer(e.message or t("bad_phone", ctx.lang))
+        return
+    await _save(state, pending_phone=res["phone"])
+    await state.set_state(Checkout.phone_code)
+    await message.answer(
+        t("code_sent", ctx.lang, phone=res["phone"]), reply_markup=phone_kb(ctx.lang)
+    )
+
+
+@router.message(Checkout.phone_code, F.text)
+async def phone_code_text(message: Message, ctx: Ctx, state: FSMContext) -> None:
+    text = message.text.strip()
+    digits = "".join(ch for ch in text if ch.isdigit())
+    if len(digits) >= 10:  # a (different) phone number instead of a code
+        await _send_code(message, ctx, state, text)
+        return
+    try:
+        res = await ctx.api.phone_confirm(ctx.bot_id, ctx.tg_id, ctx.business, text)
+    except ApiError as e:
+        await message.answer(e.message)
+        if e.code in ("code_expired", "too_many_attempts"):
+            await state.set_state(Checkout.phone)
+            await message.answer(t("ask_phone", ctx.lang), reply_markup=phone_kb(ctx.lang))
+        return
+    await message.answer(t("phone_verified", ctx.lang))
+    await _after_phone(message, ctx, state, res["phone"])
 
 
 async def _after_phone(message: Message, ctx: Ctx, state: FSMContext, phone: str) -> None:

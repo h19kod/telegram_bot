@@ -18,6 +18,7 @@ CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"
 REST_FRAMEWORK = {**REST_FRAMEWORK}  # noqa: F405
 REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"] = []
 TELEGRAM_API_BASE = "https://telegram.test"
+WHATSAPP_PROVIDER = "disabled"  # verification tests switch to "memory"
 MEDIA_ROOT = "/tmp/sop-test-media"  # noqa: S108
 LOGGING["handlers"]["console"]["formatter"] = "plain"
 LOGGING["root"]["level"] = "WARNING"
