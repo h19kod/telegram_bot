@@ -71,15 +71,23 @@ export function HomePage() {
           </div>
           <div className="min-w-0 pb-1">
             <h1 className="truncate text-[21px] font-bold">{business.name}</h1>
-            <div className="flex items-center gap-2 text-[13px]">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px]">
               <span className={cx("inline-flex items-center gap-1 font-semibold",
                 business.is_open ? "text-success" : "text-danger")}>
                 <span className={cx("size-2 rounded-full",
                   business.is_open ? "bg-success" : "bg-danger")} />
                 {business.is_open ? t("open") : t("closed")}
               </span>
+              {business.rating_avg !== null && business.rating_count > 0 && (
+                <span className="inline-flex items-center gap-0.5 font-semibold"
+                  aria-label={t("reviews_n", { n: business.rating_count })}>
+                  <span className="text-warn" aria-hidden>★</span>
+                  <span className="tabular">{business.rating_avg.toFixed(1)}</span>
+                  <span className="font-normal text-hint">({business.rating_count})</span>
+                </span>
+              )}
               {business.min_order_amount > 0 && (
-                <span className="text-hint">· {t("min_order", {
+                <span className="whitespace-nowrap text-hint">· {t("min_order", {
                   v: money(business.min_order_amount) })}</span>
               )}
             </div>

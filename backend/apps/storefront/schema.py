@@ -56,6 +56,8 @@ class StoreInfoSerializer(serializers.Serializer):
     is_open = serializers.BooleanField()
     is_active = serializers.BooleanField()
     phone_verification_required = serializers.BooleanField()
+    rating_avg = serializers.FloatField(allow_null=True, help_text="1.0-5.0, null without reviews")
+    rating_count = serializers.IntegerField()
     accepts_delivery = serializers.BooleanField()
     accepts_pickup = serializers.BooleanField()
     min_order_amount = serializers.IntegerField(help_text="Minor units")

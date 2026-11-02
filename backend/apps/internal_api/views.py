@@ -29,6 +29,7 @@ from apps.orders.serializers import (
 )
 from apps.orders.services import cart as cart_svc
 from apps.orders.services.checkout import place_order, quote
+from apps.orders.services.reviews import submit_review
 from apps.orders.services.transitions import transition
 from apps.products.services import search, storefront_products
 from apps.staff.models import Membership
@@ -37,6 +38,7 @@ from apps.storefront.serializers import (
     StoreOrderSerializer,
     StoreProductListSerializer,
     StoreProductSerializer,
+    StoreReviewSerializer,
     StoreZoneSerializer,
     business_info,
 )
@@ -317,7 +319,7 @@ class CheckoutView(CustomerScoped):
 def _orders(customer: Customer):  # type: ignore[no-untyped-def]
     return (
         Order.objects.filter(business_id=customer.business_id, customer=customer)
-        .select_related("business__settings")
+        .select_related("business__settings", "review")
         .prefetch_related("items__options", "events")
     )
 
@@ -337,6 +339,19 @@ class OrderDetailView(CustomerScoped):
         if order is None:
             raise NotFoundError()
         return Response(StoreOrderSerializer(order).data)
+
+
+class OrderReviewView(CustomerScoped):
+    def post(
+        self, request: Request, bot_id: uuid.UUID, tg_id: int, order_id: uuid.UUID
+    ) -> Response:
+        _, customer = self.ctx(request, bot_id, tg_id)
+        s = StoreReviewSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        submit_review(
+            customer, order_id, s.validated_data["rating"], s.validated_data.get("comment", "")
+        )
+        return Response(StoreOrderSerializer(_orders(customer).get(id=order_id)).data)
 
 
 class OrderCancelView(CustomerScoped):

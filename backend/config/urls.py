@@ -11,7 +11,7 @@ from apps.categories.api import CategoryViewSet
 from apps.chatbot import api as chatbot
 from apps.customers.api import CustomerViewSet
 from apps.delivery.api import DeliveryZoneViewSet
-from apps.orders.api import CouponViewSet, OrderViewSet
+from apps.orders.api import CouponViewSet, OrderViewSet, ReviewViewSet
 from apps.platform_admin import api as platform
 from apps.products.api import OptionGroupViewSet, OptionViewSet, ProductViewSet
 from apps.staff import api as staff
@@ -32,6 +32,7 @@ tenant.register("option-groups", OptionGroupViewSet, basename="option-group")
 tenant.register("options", OptionViewSet, basename="option")
 tenant.register("orders", OrderViewSet, basename="order")
 tenant.register("coupons", CouponViewSet, basename="coupon")
+tenant.register("reviews", ReviewViewSet, basename="review")
 tenant.register("customers", CustomerViewSet, basename="customer")
 tenant.register("delivery-zones", DeliveryZoneViewSet, basename="delivery-zone")
 tenant.register("roles", staff.RoleViewSet, basename="role")
@@ -47,6 +48,7 @@ tenant_urls = [
     path("settings", businesses.SettingsView.as_view()),
     path("telegram", businesses.TelegramView.as_view()),
     path("telegram/test-notification", businesses.TelegramTestView.as_view()),
+    path("qr", businesses.QRCodeView.as_view()),
     path("permissions", staff.PermissionListView.as_view()),
     path("analytics/overview", analytics.OverviewView.as_view()),
     path("analytics/sales", analytics.SalesView.as_view()),

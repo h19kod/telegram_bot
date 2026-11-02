@@ -6510,6 +6510,325 @@
                 }
             }
         },
+        "/api/v1/b/{business_id}/qr": {
+            "get": {
+                "operationId": "b_qr_retrieve",
+                "description": "Printable QR code of the shop's Telegram link (for the counter, menu or flyers).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "business_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "type",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "png",
+                                "svg"
+                            ],
+                            "default": "svg"
+                        }
+                    }
+                ],
+                "tags": [
+                    "b"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "image/svg+xml": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            },
+                            "image/png": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "4XX": {
+                        "description": "Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/b/{business_id}/reviews": {
+            "get": {
+                "operationId": "b_reviews_list",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "business_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "rating",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "b"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedReviewList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "4XX": {
+                        "description": "Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/b/{business_id}/reviews/{id}": {
+            "get": {
+                "operationId": "b_reviews_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "business_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "description": "نوع نص UUID يحدد هذا order review.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "b"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Review"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "4XX": {
+                        "description": "Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/b/{business_id}/reviews/{id}/reply": {
+            "post": {
+                "operationId": "b_reviews_reply_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "business_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "description": "نوع نص UUID يحدد هذا order review.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "b"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReviewReplyRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReviewReplyRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Review"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "4XX": {
+                        "description": "Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/b/{business_id}/reviews/summary": {
+            "get": {
+                "operationId": "b_reviews_summary_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "business_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "b"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReviewSummary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "4XX": {
+                        "description": "Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/b/{business_id}/roles": {
             "get": {
                 "operationId": "b_roles_list",
@@ -10459,6 +10778,75 @@
                 }
             }
         },
+        "/api/v1/store/{slug}/orders/{order_id}/review": {
+            "post": {
+                "operationId": "store_orders_review_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "order_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "storefront"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreReviewRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreReviewRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "customerToken": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StoreOrder"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "4XX": {
+                        "description": "Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/store/{slug}/products": {
             "get": {
                 "operationId": "store_products_list",
@@ -13753,6 +14141,39 @@
                     }
                 }
             },
+            "PaginatedReviewList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Review"
+                        }
+                    }
+                }
+            },
             "PaginatedSupportTicketList": {
                 "type": "object",
                 "required": [
@@ -14656,10 +15077,11 @@
                     "settings.edit",
                     "telegram.edit",
                     "billing.manage",
-                    "ai.manage"
+                    "ai.manage",
+                    "reviews.reply"
                 ],
                 "type": "string",
-                "description": "* `orders.view` - orders.view\n* `orders.view_assigned_only` - orders.view_assigned_only\n* `orders.receive_notifications` - orders.receive_notifications\n* `orders.transition.confirmed` - orders.transition.confirmed\n* `orders.transition.rejected` - orders.transition.rejected\n* `orders.transition.preparing` - orders.transition.preparing\n* `orders.transition.ready` - orders.transition.ready\n* `orders.transition.out_for_delivery` - orders.transition.out_for_delivery\n* `orders.transition.delivered` - orders.transition.delivered\n* `orders.cancel` - orders.cancel\n* `orders.assign_driver` - orders.assign_driver\n* `catalog.view` - catalog.view\n* `catalog.edit` - catalog.edit\n* `catalog.edit_prices` - catalog.edit_prices\n* `customers.view` - customers.view\n* `customers.view_pii` - customers.view_pii\n* `customers.block` - customers.block\n* `staff.manage` - staff.manage\n* `delivery.manage` - delivery.manage\n* `reports.view` - reports.view\n* `reports.export` - reports.export\n* `settings.edit` - settings.edit\n* `telegram.edit` - telegram.edit\n* `billing.manage` - billing.manage\n* `ai.manage` - ai.manage"
+                "description": "* `orders.view` - orders.view\n* `orders.view_assigned_only` - orders.view_assigned_only\n* `orders.receive_notifications` - orders.receive_notifications\n* `orders.transition.confirmed` - orders.transition.confirmed\n* `orders.transition.rejected` - orders.transition.rejected\n* `orders.transition.preparing` - orders.transition.preparing\n* `orders.transition.ready` - orders.transition.ready\n* `orders.transition.out_for_delivery` - orders.transition.out_for_delivery\n* `orders.transition.delivered` - orders.transition.delivered\n* `orders.cancel` - orders.cancel\n* `orders.assign_driver` - orders.assign_driver\n* `catalog.view` - catalog.view\n* `catalog.edit` - catalog.edit\n* `catalog.edit_prices` - catalog.edit_prices\n* `customers.view` - customers.view\n* `customers.view_pii` - customers.view_pii\n* `customers.block` - customers.block\n* `staff.manage` - staff.manage\n* `delivery.manage` - delivery.manage\n* `reports.view` - reports.view\n* `reports.export` - reports.export\n* `settings.edit` - settings.edit\n* `telegram.edit` - telegram.edit\n* `billing.manage` - billing.manage\n* `ai.manage` - ai.manage\n* `reviews.reply` - reviews.reply"
             },
             "PhoneCodeConfirmRequest": {
                 "type": "object",
@@ -15591,6 +16013,100 @@
                 "type": "string",
                 "description": "* `none` - None\n* `month` - Month"
             },
+            "Review": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "order_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "order_number": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "customer_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "rating": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "comment": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "reply": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "replied_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "comment",
+                    "created_at",
+                    "customer_name",
+                    "id",
+                    "order_id",
+                    "order_number",
+                    "rating",
+                    "replied_at",
+                    "reply"
+                ]
+            },
+            "ReviewReplyRequest": {
+                "type": "object",
+                "properties": {
+                    "reply": {
+                        "type": "string",
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "reply"
+                ]
+            },
+            "ReviewSummary": {
+                "type": "object",
+                "properties": {
+                    "rating_avg": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "rating_count": {
+                        "type": "integer"
+                    },
+                    "distribution": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "integer"
+                        },
+                        "description": "1..5 → n"
+                    }
+                },
+                "required": [
+                    "distribution",
+                    "rating_avg",
+                    "rating_count"
+                ]
+            },
             "Role": {
                 "type": "object",
                 "properties": {
@@ -15934,6 +16450,15 @@
                     "phone_verification_required": {
                         "type": "boolean"
                     },
+                    "rating_avg": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true,
+                        "description": "1.0-5.0, null without reviews"
+                    },
+                    "rating_count": {
+                        "type": "integer"
+                    },
                     "accepts_delivery": {
                         "type": "boolean"
                     },
@@ -15996,6 +16521,8 @@
                     "payment_methods",
                     "phone",
                     "phone_verification_required",
+                    "rating_avg",
+                    "rating_count",
                     "slug",
                     "welcome_message"
                 ]
@@ -16240,6 +16767,19 @@
                             "$ref": "#/components/schemas/StoreTimelineEvent"
                         },
                         "readOnly": true
+                    },
+                    "can_review": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "review": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StoreReview"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -16247,6 +16787,7 @@
                     "address_landmark",
                     "address_street",
                     "can_cancel",
+                    "can_review",
                     "cancel_reason",
                     "channel",
                     "currency",
@@ -16261,6 +16802,7 @@
                     "number",
                     "payment_method",
                     "placed_at",
+                    "review",
                     "status",
                     "subtotal",
                     "timeline",
@@ -16501,6 +17043,46 @@
                     "prep_time_min",
                     "price",
                     "tags"
+                ]
+            },
+            "StoreReview": {
+                "type": "object",
+                "properties": {
+                    "rating": {
+                        "type": "integer",
+                        "maximum": 5,
+                        "minimum": 1
+                    },
+                    "comment": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "reply": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "comment",
+                    "rating",
+                    "reply"
+                ]
+            },
+            "StoreReviewRequest": {
+                "type": "object",
+                "properties": {
+                    "rating": {
+                        "type": "integer",
+                        "maximum": 5,
+                        "minimum": 1
+                    },
+                    "comment": {
+                        "type": "string",
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "rating"
                 ]
             },
             "StoreSupportMessageRequest": {

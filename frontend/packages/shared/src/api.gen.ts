@@ -1198,6 +1198,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/b/{business_id}/qr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Printable QR code of the shop's Telegram link (for the counter, menu or flyers). */
+        get: operations["b_qr_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b/{business_id}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["b_reviews_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b/{business_id}/reviews/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["b_reviews_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b/{business_id}/reviews/{id}/reply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["b_reviews_reply_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/b/{business_id}/reviews/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["b_reviews_summary_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/b/{business_id}/roles": {
         parameters: {
             query?: never;
@@ -1977,6 +2058,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["store_orders_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/store/{slug}/orders/{order_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["store_orders_review_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2950,6 +3047,21 @@ export interface components {
             previous: string | null;
             results: components["schemas"]["Product"][];
         };
+        PaginatedReviewList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous: string | null;
+            results: components["schemas"]["Review"][];
+        };
         PaginatedSupportTicketList: {
             /** @example 123 */
             count: number;
@@ -3232,9 +3344,10 @@ export interface components {
          *     * `telegram.edit` - telegram.edit
          *     * `billing.manage` - billing.manage
          *     * `ai.manage` - ai.manage
+         *     * `reviews.reply` - reviews.reply
          * @enum {string}
          */
-        PermissionsEnum: "orders.view" | "orders.view_assigned_only" | "orders.receive_notifications" | "orders.transition.confirmed" | "orders.transition.rejected" | "orders.transition.preparing" | "orders.transition.ready" | "orders.transition.out_for_delivery" | "orders.transition.delivered" | "orders.cancel" | "orders.assign_driver" | "catalog.view" | "catalog.edit" | "catalog.edit_prices" | "customers.view" | "customers.view_pii" | "customers.block" | "staff.manage" | "delivery.manage" | "reports.view" | "reports.export" | "settings.edit" | "telegram.edit" | "billing.manage" | "ai.manage";
+        PermissionsEnum: "orders.view" | "orders.view_assigned_only" | "orders.receive_notifications" | "orders.transition.confirmed" | "orders.transition.rejected" | "orders.transition.preparing" | "orders.transition.ready" | "orders.transition.out_for_delivery" | "orders.transition.delivered" | "orders.cancel" | "orders.assign_driver" | "catalog.view" | "catalog.edit" | "catalog.edit_prices" | "customers.view" | "customers.view_pii" | "customers.block" | "staff.manage" | "delivery.manage" | "reports.view" | "reports.export" | "settings.edit" | "telegram.edit" | "billing.manage" | "ai.manage" | "reviews.reply";
         PhoneCodeConfirmRequest: {
             code: string;
         };
@@ -3475,6 +3588,33 @@ export interface components {
          * @enum {string}
          */
         ResetPeriodEnum: "none" | "month";
+        Review: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly order_id: string;
+            readonly order_number: number;
+            readonly customer_name: string;
+            readonly rating: number;
+            readonly comment: string;
+            readonly reply: string;
+            /** Format: date-time */
+            readonly replied_at: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        ReviewReplyRequest: {
+            reply: string;
+        };
+        ReviewSummary: {
+            /** Format: double */
+            rating_avg: number | null;
+            rating_count: number;
+            /** @description 1..5 → n */
+            distribution: {
+                [key: string]: number;
+            };
+        };
         Role: {
             /** Format: uuid */
             readonly id: string;
@@ -3575,6 +3715,12 @@ export interface components {
             is_open: boolean;
             is_active: boolean;
             phone_verification_required: boolean;
+            /**
+             * Format: double
+             * @description 1.0-5.0, null without reviews
+             */
+            rating_avg: number | null;
+            rating_count: number;
             accepts_delivery: boolean;
             accepts_pickup: boolean;
             /** @description Minor units */
@@ -3650,6 +3796,8 @@ export interface components {
             readonly items: components["schemas"]["StoreOrderItem"][];
             readonly can_cancel: boolean;
             readonly timeline: components["schemas"]["StoreTimelineEvent"][];
+            readonly can_review: boolean;
+            readonly review: components["schemas"]["StoreReview"] | null;
         };
         StoreOrderItem: {
             name: string;
@@ -3702,6 +3850,15 @@ export interface components {
             prep_time_min: number | null;
             readonly images: components["schemas"]["StoreImage"][];
             readonly has_options: boolean;
+        };
+        StoreReview: {
+            rating: number;
+            comment: string;
+            readonly reply: string;
+        };
+        StoreReviewRequest: {
+            rating: number;
+            comment?: string;
         };
         StoreSupportMessageRequest: {
             message: string;
@@ -7643,6 +7800,176 @@ export interface operations {
             };
         };
     };
+    b_qr_retrieve: {
+        parameters: {
+            query?: {
+                type?: "png" | "svg";
+            };
+            header?: never;
+            path: {
+                business_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/svg+xml": string;
+                    "image/png": string;
+                };
+            };
+            /** @description Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    b_reviews_list: {
+        parameters: {
+            query?: {
+                /** @description أي حقل يجب استخدامه عند ترتيب النتائج. */
+                ordering?: string;
+                /** @description رقم الصفحة ضمن النتائج المقسمة. */
+                page?: number;
+                /** @description عدد النتائج التي يجب إرجاعها في كل صفحة. */
+                page_size?: number;
+                rating?: number;
+            };
+            header?: never;
+            path: {
+                business_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedReviewList"];
+                };
+            };
+            /** @description Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    b_reviews_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                business_id: string;
+                /** @description نوع نص UUID يحدد هذا order review. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Review"];
+                };
+            };
+            /** @description Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    b_reviews_reply_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                business_id: string;
+                /** @description نوع نص UUID يحدد هذا order review. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewReplyRequest"];
+                "multipart/form-data": components["schemas"]["ReviewReplyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Review"];
+                };
+            };
+            /** @description Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    b_reviews_summary_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                business_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSummary"];
+                };
+            };
+            /** @description Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     b_roles_list: {
         parameters: {
             query?: {
@@ -10046,6 +10373,42 @@ export interface operations {
             content: {
                 "application/json": components["schemas"]["CancelRequest"];
                 "multipart/form-data": components["schemas"]["CancelRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreOrder"];
+                };
+            };
+            /** @description Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    store_orders_review_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoreReviewRequest"];
+                "multipart/form-data": components["schemas"]["StoreReviewRequest"];
             };
         };
         responses: {

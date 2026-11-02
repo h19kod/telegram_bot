@@ -13,6 +13,7 @@ export const NAV: { to: string; key: TKey; icon: string; perm?: string }[] = [
   { to: "/categories", key: "categories", icon: "📂", perm: "catalog.view" },
   { to: "/discounts", key: "discounts", icon: "🏷️", perm: "catalog.edit_prices" },
   { to: "/customers", key: "customers", icon: "👥", perm: "customers.view" },
+  { to: "/reviews", key: "reviews", icon: "⭐", perm: "orders.view" },
   { to: "/staff", key: "staff", icon: "🧑‍🍳", perm: "staff.manage" },
   { to: "/delivery", key: "delivery", icon: "🛵", perm: "delivery.manage" },
   { to: "/reports", key: "reports", icon: "📈", perm: "reports.view" },

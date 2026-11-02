@@ -103,6 +103,8 @@ Status codes: 400 validation, 401 unauthenticated, 403 authenticated-but-forbidd
 | GET | `orders/export?format=csv\|xlsx` | Async export job [reports.export] |
 | GET | `customers`, `customers/{id}` | [customers.view; phone masked without customers.view_pii] |
 | POST | `customers/{id}/block`, `unblock` | |
+| GET | `reviews` (`?rating=`), `reviews/{id}`, `reviews/summary` | [orders.view] list, average + 1–5 distribution |
+| POST | `reviews/{id}/reply` | [reviews.reply] `{reply}`; empty clears it |
 | CRUD | `delivery-zones` | [delivery.manage] |
 | GET | `governorates` | Reference data |
 | CRUD | `roles` | [staff.manage] |
@@ -137,6 +139,7 @@ Status codes: 400 validation, 401 unauthenticated, 403 authenticated-but-forbidd
 | GET | `orders`, `orders/{id}` | History & tracking |
 | POST | `orders/{id}/cancel` | Within window |
 | GET/PATCH | `me` | Name, phone, language. A changed phone is stored unverified |
+| POST | `orders/{id}/review` | `{rating 1-5, comment?}` → order (with `review`, `can_review`); own delivered order, 7 days |
 | POST | `me/phone/code` | `{phone}` → 202 `{phone, expires_in, resend_in}`; WhatsApp code (60 s resend, 5/h per customer and per number) |
 | POST | `me/phone/confirm` | `{code}` → `me` with `phone_verified: true`; `invalid_code` carries `attempts_left` |
 | CRUD | `me/addresses` | Saved addresses |
@@ -172,6 +175,7 @@ Status codes: 400 validation, 401 unauthenticated, 403 authenticated-but-forbidd
 | POST | `bots/{bot_id}/ai/message` | AI turn → reply + optional proposal |
 | POST | `bots/{bot_id}/ai/proposals/{id}/confirm` | Convert proposal into cart/checkout |
 | POST | `bots/{bot_id}/support` | Customer support message |
+| POST | `bots/{bot_id}/customers/{tg_id}/orders/{id}/review` | Rating from the bot's ⭐ buttons |
 | POST | `bots/{bot_id}/customers/{tg_id}/phone/code` · `phone/confirm` | WhatsApp verification, same rules as the Mini App |
 | POST | `bots/{bot_id}/customers/{tg_id}/phone/contact` | `{phone, contact_user_id}`: the user shared their *own* Telegram contact → verified |
 

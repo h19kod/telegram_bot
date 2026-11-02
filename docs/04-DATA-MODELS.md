@@ -214,13 +214,17 @@ Indexes: (business, status, placed_at desc), (business, placed_at), (business, c
 
 Cancelling or rejecting restores stock for tracked products.
 
+**OrderReview** (T) — order (1:1), customer, rating 1–5 (check constraint), comment ≤500, reply ≤500,
+replied_at, replied_by. Only the order's customer, only for a `delivered` order, editable for 7 days
+after delivery. Shop average and count are public in the storefront info (`rating_avg`, `rating_count`).
+
 ## delivery
 
 **DeliveryZone** (T) — branch FK, name_ar/en, governorate FK, areas (array text, normalised for matching), fee, min_order (nullable), free_delivery_threshold (nullable), eta_min/eta_max (minutes), is_active, sort_order.
 
 ## notifications
 
-**NotificationOutbox** — event type, payload JSON, dedup_key (unique), status, attempts, next_attempt_at, last_error. Written in the same transaction as the domain change (transactional outbox), drained by Celery → no lost or duplicated notifications even if the worker crashes.
+**NotificationOutbox** — event type, payload JSON, dedup_key (unique), status, attempts, next_attempt_at, last_error. Written in the same transaction as the domain change (transactional outbox), drained by Celery → no lost or duplicated notifications even if the worker crashes. The drain leases due rows in a short transaction (`next_attempt_at` = lease expiry), sends with no transaction open, and writes each result back only while it still holds the lease. One drain runs at a time (cache lock), and a business whose bot is rate-limited, unreachable or rejected (401/404) is paused for the rest of the run.
 
 ## subscriptions
 

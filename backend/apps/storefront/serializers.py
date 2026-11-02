@@ -172,6 +172,12 @@ def _ai_entitled(business: Business) -> bool:
     return has_feature(business.id, "ai_assistant")
 
 
+def _ratings(business: Business) -> dict[str, Any]:
+    from apps.orders.services.reviews import rating_summary
+
+    return rating_summary(business)
+
+
 def verification_required(business: Business) -> bool:
     from apps.customers.services import verification_required as required
 
@@ -208,6 +214,7 @@ def business_info(business: Business, branch: Branch) -> dict[str, Any]:
         "is_open": is_open(branch) and business.is_active,
         "is_active": business.is_active,
         "phone_verification_required": verification_required(business),
+        **_ratings(business),
         "accepts_delivery": branch.accepts_delivery,
         "accepts_pickup": branch.accepts_pickup,
         "min_order_amount": cfg.min_order_amount,
@@ -221,9 +228,17 @@ def business_info(business: Business, branch: Branch) -> dict[str, Any]:
     }
 
 
+class StoreReviewSerializer(serializers.Serializer):
+    rating = serializers.IntegerField(min_value=1, max_value=5)
+    comment = serializers.CharField(max_length=500, required=False, allow_blank=True)
+    reply = serializers.CharField(read_only=True)
+
+
 class StoreOrderSerializer(serializers.ModelSerializer):
     items = serializers.SerializerMethodField()
     can_cancel = serializers.SerializerMethodField()
+    can_review = serializers.SerializerMethodField()
+    review = serializers.SerializerMethodField()
     timeline = serializers.SerializerMethodField()
 
     class Meta:
@@ -252,6 +267,8 @@ class StoreOrderSerializer(serializers.ModelSerializer):
             "items",
             "can_cancel",
             "timeline",
+            "can_review",
+            "review",
         ]
 
     @extend_schema_field(StoreOrderItemSerializer(many=True))
@@ -279,6 +296,18 @@ class StoreOrderSerializer(serializers.ModelSerializer):
         from apps.orders.services.transitions import customer_can_cancel
 
         return customer_can_cancel(obj)
+
+    def get_can_review(self, obj: Order) -> bool:
+        from apps.orders.services.reviews import can_review
+
+        return can_review(obj)
+
+    @extend_schema_field(StoreReviewSerializer(allow_null=True))
+    def get_review(self, obj: Order) -> dict[str, Any] | None:
+        r = getattr(obj, "review", None)
+        if r is None:
+            return None
+        return {"rating": r.rating, "comment": r.comment, "reply": r.reply}
 
     @extend_schema_field(StoreTimelineEventSerializer(many=True))
     def get_timeline(self, obj: Order) -> list[dict[str, Any]]:

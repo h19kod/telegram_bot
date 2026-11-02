@@ -1,10 +1,11 @@
 import { formatDateTime, formatTime } from "@sop/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import type { Order, OrderStatus } from "../api";
+import { ApiError, type Order, type OrderStatus } from "../api";
 import { Page } from "../components/Layout";
-import { Button, Card, cx, Empty, ErrorState, Skeleton } from "../components/ui";
+import { Button, Card, cx, Empty, ErrorState, Skeleton, TextArea } from "../components/ui";
 import { useSession } from "../session";
 import { confirmDialog, haptic } from "../telegram";
 import type { TKey } from "../i18n";
@@ -155,6 +156,7 @@ export function OrderDetailPage() {
           <Card className="p-4 text-[14px]"><span className="text-hint">{t("reason")}: </span>
             {o.cancel_reason}</Card>
         )}
+        {(o.can_review || o.review) && <ReviewCard order={o} />}
         {o.can_cancel && (
           <Button variant="danger" className="w-full" disabled={cancel.isPending}
             onClick={async () => { if (await confirmDialog(t("confirm_cancel"))) cancel.mutate(); }}>
@@ -166,6 +168,72 @@ export function OrderDetailPage() {
         )}
       </div>
     </Page>
+  );
+}
+
+function ReviewCard({ order }: { order: Order }) {
+  const { api, t } = useSession();
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(!order.review);
+  const [rating, setRating] = useState(order.review?.rating ?? 0);
+  const [comment, setComment] = useState(order.review?.comment ?? "");
+  const send = useMutation({
+    mutationFn: () => api.reviewOrder(order.id, rating, comment.trim()),
+    onSuccess: (o) => { haptic.success(); qc.setQueryData(["order", order.id], o); setEditing(false); },
+    onError: () => haptic.error(),
+  });
+  if (!editing && order.review) {
+    return (
+      <Card className="space-y-2 p-4 text-[14px]">
+        <div className="flex items-center justify-between">
+          <p className="font-semibold">{t("your_rating")}</p>
+          {order.can_review && <button type="button" className="text-[13px] font-semibold
+            text-link" onClick={() => setEditing(true)}>{t("edit_rating")}</button>}
+        </div>
+        <Stars value={order.review.rating} />
+        {order.review.comment && <p className="text-hint">{order.review.comment}</p>}
+        {order.review.reply && <p className="rounded-xl bg-accent/5 p-3">
+          <span className="font-semibold">💬 {t("shop_reply")}: </span>{order.review.reply}</p>}
+        {send.isSuccess && <p role="status" className="text-success">{t("thanks_rating")}</p>}
+      </Card>
+    );
+  }
+  return (
+    <Card className="space-y-3 p-4">
+      <div>
+        <p className="font-semibold">{t("rate_order")}</p>
+        <p className="text-[13px] text-hint">{t("rate_hint")}</p>
+      </div>
+      <Stars value={rating} onChange={(n) => { setRating(n); haptic.select(); }} />
+      <TextArea value={comment} maxLength={500} placeholder={t("review_comment")}
+        aria-label={t("review_comment")} className="min-h-20"
+        onChange={(e) => setComment(e.target.value)} />
+      {send.isError && <p role="alert" className="text-[13px] text-danger">
+        {send.error instanceof ApiError ? send.error.message : t("error_title")}</p>}
+      <Button className="w-full" disabled={!rating || send.isPending}
+        onClick={() => send.mutate()}>{t("send_rating")}</Button>
+    </Card>
+  );
+}
+
+export function Stars({ value, onChange, size = "text-[28px]" }: { value: number;
+  onChange?: (n: number) => void; size?: string }) {
+  const { t } = useSession();
+  if (!onChange) {
+    return <p className={cx("tracking-wider", size === "text-[28px]" ? "text-[20px]" : size)}
+      role="img" aria-label={t("stars_n", { n: value })}>
+      <span className="text-warn">{"★".repeat(value)}</span>
+      <span className="text-line">{"★".repeat(5 - value)}</span></p>;
+  }
+  return (
+    <div className="flex justify-center gap-1" role="radiogroup" aria-label={t("rate_order")}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button key={n} type="button" role="radio" aria-checked={value === n}
+          aria-label={t("stars_n", { n })} onClick={() => onChange(n)}
+          className={cx(size, "leading-none transition active:scale-90",
+            n <= value ? "text-warn" : "text-line")}>★</button>
+      ))}
+    </div>
   );
 }
 

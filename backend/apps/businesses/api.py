@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status
@@ -258,15 +259,7 @@ class TelegramView(APIView):
                 "has_own_bot": bot is not None,
                 "bot": TelegramStatusSerializer(bot).data if bot else None,
                 "shared_bot_username": shared.username if shared else None,
-                "deep_link": (
-                    f"https://t.me/{bot.username}"
-                    if bot
-                    else (
-                        f"https://t.me/{shared.username}?start={request.business.slug}"
-                        if shared
-                        else None
-                    )
-                ),
+                "deep_link": services.store_link(request.business),
             }
         )
 
@@ -417,3 +410,28 @@ class GovernorateListView(ListAPIView):
     serializer_class = GovernorateSerializer
     queryset = Governorate.objects.all()
     pagination_class = None
+
+
+class QRCodeView(APIView):
+    """Printable QR code of the shop's Telegram link (for the counter, menu or flyers)."""
+
+    permission_classes = [IsBusinessMember]
+
+    @extend_schema(
+        parameters=[OpenApiParameter("type", str, enum=["svg", "png"], default="svg")],
+        responses={
+            (200, "image/svg+xml"): OpenApiTypes.BINARY,
+            (200, "image/png"): OpenApiTypes.BINARY,
+        },
+    )
+    def get(self, request: Request, business_id: Any) -> HttpResponse:
+        require(request, "settings.edit")
+        link = services.store_link(request.business)
+        if link is None:
+            raise DomainError("business_unavailable")
+        kind = "png" if request.query_params.get("type") == "png" else "svg"
+        body, ctype = services.qr_code(link, kind)
+        resp = HttpResponse(body, content_type=ctype)
+        resp["Content-Disposition"] = f'inline; filename="{request.business.slug}-qr.{kind}"'
+        resp["Cache-Control"] = "private, max-age=300"
+        return resp

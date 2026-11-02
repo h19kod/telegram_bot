@@ -201,6 +201,30 @@ async def test_own_telegram_contact_verifies_without_code(env):
 
 
 @respx.mock
+async def test_rate_delivered_order_with_stars(env):
+    dp, bot, session, redis = env
+    respx.post(f"{B}/session").mock(return_value=httpx.Response(200, json={
+        "business": BUSINESS, "customer": {"language": "ar", "full_name": "Ali", "phone": ""},
+        "is_staff": False, "mini_app_url": None}))
+    order = {"id": ORDER, "number": 7, "status": "delivered", "currency": "IQD", "items": [],
+             "delivery_fee": 0, "total": 5000, "timeline": [], "can_cancel": False,
+             "can_review": True, "review": None}
+    respx.get(f"{B}/customers/9001/orders/{ORDER}").mock(
+        return_value=httpx.Response(200, json=order))
+    rate = respx.post(f"{B}/customers/9001/orders/{ORDER}/review").mock(
+        return_value=httpx.Response(200, json={
+            **order, "review": {"rating": 4, "comment": "", "reply": "نورتنا"}}))
+    await feed(dp, bot, redis, msg_update("/start"))
+    await feed(dp, bot, redis, cb_update(f"ov:{h(ORDER)}"))
+    assert "قيّمنا" in session.texts()[-1]
+    await feed(dp, bot, redis, cb_update(find_button(session.last_markup(), "rv:")[:-1] + "4"))
+    assert json.loads(rate.calls[0].request.content) == {"rating": 4}
+    assert any("شكراً" in a for a in session.alerts())
+    assert "⭐⭐⭐⭐" in session.texts()[-1]
+    assert "نورتنا" in session.texts()[-1]
+
+
+@respx.mock
 async def test_staff_button_duplicate_and_unlinked(env):
     dp, bot, session, redis = env
     route = respx.post(f"{B}/staff/transition")

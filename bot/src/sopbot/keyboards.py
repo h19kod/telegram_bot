@@ -85,6 +85,11 @@ class OrderCancel(CallbackData, prefix="oc"):
     id: str
 
 
+class OrderRate(CallbackData, prefix="rv"):
+    id: str
+    stars: int
+
+
 class StaffAction(CallbackData, prefix="o"):
     """Format produced by the backend: o:<order hex>:<status code>:<version>."""
 

@@ -4,9 +4,10 @@ import re
 
 import pytest
 from django.urls import get_resolver
+from django.utils import timezone
 
 from apps.chatbot.models import AIConversation, KnowledgeEntry
-from apps.orders.models import Coupon
+from apps.orders.models import Coupon, Order, OrderReview
 from apps.orders.services import cart as cart_svc
 from apps.orders.services.checkout import CheckoutInput, place_order
 from apps.platform_admin.models import SupportTicket
@@ -46,6 +47,8 @@ def build(b):
             idempotency_key=uuid.uuid4(),
         ),
     )
+    Order.objects.filter(pk=order.pk).update(status="delivered", delivered_at=timezone.now())
+    review = OrderReview.objects.create(business=b, order=order, customer=c, rating=5)
     member = make_member(b, "Cashier")
     inv = StaffInvitation.objects.create(
         business=b,
@@ -68,6 +71,7 @@ def build(b):
         "b-ticket": SupportTicket.objects.create(business=b, subject="x"),
         "knowledge": KnowledgeEntry.objects.create(business=b, topic="t", answer_ar="a"),
         "ai-conversation": AIConversation.objects.create(business=b, customer=c),
+        "review": review,
         "coupon": Coupon.objects.create(
             business=b, code=f"C{uuid.uuid4().hex[:8]}".upper(), kind="fixed", value=100
         ),
@@ -91,6 +95,7 @@ def test_all_router_basenames_covered():
         "knowledge",
         "ai-conversation",
         "coupon",
+        "review",
     }
     for _, _, basename in tenant.registry:
         assert basename in covered, f"{basename} missing from isolation matrix"

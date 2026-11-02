@@ -13,9 +13,11 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from apps.orders.models import EventSource, Order, OrderStatus
+from apps.orders.models import EventSource, Order, OrderReview, OrderStatus
 from apps.orders.serializers import OrderDetailSerializer, OrderListSerializer, TransitionSerializer
+from apps.orders.services.reviews import rating_summary, reply_to_review
 from apps.orders.services.transitions import assign_driver, transition
+from apps.platform_admin.audit import audit
 from apps.staff.models import Membership
 from apps.subscriptions.services import require_feature
 from core.errors import NotFoundError
@@ -253,3 +255,69 @@ class CouponViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer: serializers.BaseSerializer) -> None:
         require_feature(self.request.business.id, "coupons")
         serializer.save(business=self.request.business)
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    order_number = serializers.IntegerField(source="order.number", read_only=True)
+    order_id = serializers.UUIDField(source="order.id", read_only=True)
+    customer_name = serializers.CharField(source="order.customer_name", read_only=True)
+
+    class Meta:
+        model = OrderReview
+        fields = [
+            "id",
+            "order_id",
+            "order_number",
+            "customer_name",
+            "rating",
+            "comment",
+            "reply",
+            "replied_at",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class ReviewReplySerializer(serializers.Serializer):
+    reply = serializers.CharField(max_length=500, allow_blank=True)
+
+
+class ReviewSummarySerializer(serializers.Serializer):
+    rating_avg = serializers.FloatField(allow_null=True)
+    rating_count = serializers.IntegerField()
+    distribution = serializers.DictField(child=serializers.IntegerField(), help_text="1..5 → n")
+
+
+class ReviewViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    permission_classes = [IsBusinessMember]
+    required_permissions = {"*": ["orders.view"]}
+    serializer_class = ReviewSerializer
+    filterset_fields = ["rating"]
+    ordering_fields = ["created_at", "rating"]
+    ordering = ["-created_at"]
+
+    def get_queryset(self):  # type: ignore[no-untyped-def]
+        return OrderReview.objects.for_business(
+            getattr(self.request, "business", None)
+        ).select_related("order")
+
+    @extend_schema(request=ReviewReplySerializer, responses=ReviewSerializer)
+    @action(detail=True, methods=["post"])
+    def reply(self, request: Request, business_id: Any, pk: Any = None) -> Response:
+        require(request, "reviews.reply")
+        s = ReviewReplySerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        review = reply_to_review(request.business, pk, request.user, s.validated_data["reply"])
+        audit(request, "review.reply", request.business, review)
+        return Response(ReviewSerializer(review).data)
+
+    @extend_schema(responses=ReviewSummarySerializer)
+    @action(detail=False, methods=["get"])
+    def summary(self, request: Request, business_id: Any) -> Response:
+        dist = dict(self.get_queryset().values_list("rating").annotate(n=Count("id")).order_by())
+        return Response(
+            {
+                **rating_summary(request.business),
+                "distribution": {str(i): dist.get(i, 0) for i in range(1, 6)},
+            }
+        )

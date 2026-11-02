@@ -17,6 +17,7 @@ urlpatterns = [
     path("orders", v.OrdersView.as_view()),
     path("orders/<uuid:order_id>", v.OrderDetailView.as_view()),
     path("orders/<uuid:order_id>/cancel", v.OrderCancelView.as_view()),
+    path("orders/<uuid:order_id>/review", v.OrderReviewView.as_view()),
     path("me", v.MeView.as_view()),
     path("me/phone/code", v.PhoneCodeView.as_view()),
     path("me/phone/confirm", v.PhoneConfirmView.as_view()),

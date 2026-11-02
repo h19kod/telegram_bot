@@ -28,6 +28,7 @@ PERMISSIONS: dict[str, str] = {
     "telegram.edit": "Edit Telegram settings",
     "billing.manage": "Manage subscription",
     "ai.manage": "Manage AI assistant and conversations",
+    "reviews.reply": "Reply to customer reviews",
 }
 
 _ALL = set(PERMISSIONS) - {"orders.view_assigned_only"}

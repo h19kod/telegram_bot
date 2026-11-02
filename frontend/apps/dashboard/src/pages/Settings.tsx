@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "../components/Shell";
 import { Badge, Button, Card, Empty, ErrorBox, errorMessage, Field, Input, Loading, Select, Table,
   TextArea, Toggle, useUi } from "../components/ui";
-import { ApiError, del, download, get, patch, post, put, upload, type Branch, type Business,
+import { ApiError, del, download, get, patch, post, put, request, upload, type Branch, type Business,
   type Settings, type SubscriptionOverview, type SupportTicket, type TelegramOverview } from "../lib/api";
 import { useBizKey, useBizPath, useSession } from "../lib/session";
 import { rangeFor, SalesChart, TopProducts } from "./Overview";
@@ -120,6 +120,55 @@ function BranchCard({ branch }: { branch: Branch }) {
 
 type TgStatus = TelegramOverview;
 
+/** Printable QR of the store link: preview, SVG/PNG download and a ready-to-print card. */
+function QrCard({ link }: { link: string }) {
+  const { t, lang, membership } = useSession();
+  const path = useBizPath();
+  const qrPath = path("/qr");
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    let url: string | null = null;
+    let live = true;
+    request<Response>(qrPath, { raw: true }).then((r) => r.blob()).then((b) => {
+      url = URL.createObjectURL(b);
+      if (live) setSrc(url);
+    }).catch(() => setSrc(null));
+    return () => { live = false; if (url) URL.revokeObjectURL(url); };
+  }, [qrPath, link]);
+  const print = () => {
+    if (!src) return;
+    const w = window.open("", "_blank", "noopener=no,width=600,height=800");
+    if (!w) return;
+    const name = (lang === "en" && membership?.business_name_en) || membership?.business_name_ar || "";
+    w.document.title = name;
+    w.document.body.innerHTML = `<div style="font-family:system-ui,sans-serif;text-align:center;padding:40px" dir="rtl">
+      <h1 style="font-size:32px;margin:0 0 8px"></h1><p style="font-size:20px;margin:0 0 24px"></p>
+      <img style="width:360px;height:360px" alt=""><p dir="ltr" style="font-size:14px;color:#555"></p></div>`;
+    w.document.querySelector("h1")!.textContent = name;
+    w.document.querySelector("p")!.textContent = t("qr_scan_to_order");
+    w.document.querySelector("img")!.src = src;
+    w.document.querySelectorAll("p")[1]!.textContent = link;
+    w.setTimeout(() => w.print(), 300);
+  };
+  return (
+    <Card title={t("qr_code")}>
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="grid size-40 place-items-center rounded-lg bg-white p-2">
+          {src ? <img src={src} alt={t("qr_code")} className="size-full" /> : <Loading />}
+        </div>
+        <div className="space-y-2">
+          <p className="max-w-64 text-[13px] text-hint">{t("qr_hint")}</p>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={print} disabled={!src}>🖨️ {t("print")}</Button>
+            <Button size="sm" variant="secondary" onClick={() => download(path("/qr?type=png"), "store-qr.png")}>PNG</Button>
+            <Button size="sm" variant="secondary" onClick={() => download(path("/qr"), "store-qr.svg")}>SVG</Button>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function TelegramPage() {
   const { t } = useSession();
   const key = useBizKey();
@@ -161,6 +210,7 @@ export function TelegramPage() {
           )}
           {st.deep_link && <Field label={t("store_link")} className="mt-4"><Input readOnly dir="ltr" value={st.deep_link} onFocus={(e) => e.target.select()} /></Field>}
         </Card>
+        {st.deep_link && <QrCard link={st.deep_link} />}
         <Card title={t("notification_chats")} actions={<Button size="sm" variant="secondary" disabled={test.isPending} onClick={() => test.mutate()}>{t("test_notification")}</Button>}>
           <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); saveChats.mutate(); }}>
             <Input dir="ltr" value={chats} onChange={(e) => setChats(e.target.value)} placeholder="-1001234567890" />

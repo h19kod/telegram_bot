@@ -117,6 +117,8 @@ export class StoreApi {
 
   orders = () => this.request<Order[]>("/orders");
   order = (id: string) => this.request<Order>(`/orders/${id}`);
+  reviewOrder = (id: string, rating: number, comment: string) =>
+    this.request<Order>(`/orders/${id}/review`, { method: "POST", body: { rating, comment } });
   cancelOrder = (id: string) =>
     this.request<Order>(`/orders/${id}/cancel`, { method: "POST", body: {} });
 

@@ -288,3 +288,28 @@ class CouponRedemption(TenantModel):
     order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="coupon_redemption")
     customer = models.ForeignKey("customers.Customer", on_delete=models.CASCADE, related_name="+")
     amount = models.BigIntegerField()
+
+
+class OrderReview(TenantModel):
+    """The customer's rating of one delivered order, with an optional public reply."""
+
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="review")
+    customer = models.ForeignKey("customers.Customer", on_delete=models.CASCADE, related_name="+")
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    comment = models.CharField(max_length=500, blank=True)
+    reply = models.CharField(max_length=500, blank=True)
+    replied_at = models.DateTimeField(null=True, blank=True)
+    replied_by = models.ForeignKey(
+        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(rating__gte=1) & Q(rating__lte=5), name="review_rating_range"
+            )
+        ]
+        indexes = [models.Index(fields=["business", "-created_at"])]

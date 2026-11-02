@@ -32,6 +32,7 @@ dependencies = [
     "uvicorn[standard]>=0.30",
     "anthropic>=0.80",
     "whitenoise>=6.7",
+    "segno>=1.6",
 ]
 
 [dependency-groups]

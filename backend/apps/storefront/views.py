@@ -31,6 +31,7 @@ from apps.orders.serializers import (
 )
 from apps.orders.services import cart as cart_svc
 from apps.orders.services.checkout import CheckoutInput, place_order, quote
+from apps.orders.services.reviews import submit_review
 from apps.orders.services.transitions import transition
 from apps.products.services import search, storefront_products
 from apps.storefront.auth import CustomerTokenAuthentication, IsStoreCustomer, issue_customer_token
@@ -54,6 +55,7 @@ from apps.storefront.serializers import (
     StoreOrderSerializer,
     StoreProductListSerializer,
     StoreProductSerializer,
+    StoreReviewSerializer,
     StoreZoneSerializer,
     business_info,
 )
@@ -351,7 +353,7 @@ class CheckoutView(StoreView):
 def _orders(customer):  # type: ignore[no-untyped-def]
     return (
         Order.objects.filter(business_id=customer.business_id, customer=customer)
-        .select_related("business__settings")
+        .select_related("business__settings", "review")
         .prefetch_related("items__options", "events")
     )
 
@@ -385,6 +387,17 @@ class OrderCancelView(StoreView):
             source=EventSource.CUSTOMER,
             customer=self.customer,
             reason=str(request.data.get("reason", ""))[:300],
+        )
+        return Response(StoreOrderSerializer(_orders(self.customer).get(id=order_id)).data)
+
+
+@extend_schema(tags=["storefront"], request=StoreReviewSerializer, responses=StoreOrderSerializer)
+class OrderReviewView(StoreView):
+    def post(self, request: Request, slug: str, order_id: uuid.UUID) -> Response:
+        s = StoreReviewSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        submit_review(
+            self.customer, order_id, s.validated_data["rating"], s.validated_data.get("comment", "")
         )
         return Response(StoreOrderSerializer(_orders(self.customer).get(id=order_id)).data)
 

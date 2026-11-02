@@ -82,6 +82,10 @@ MESSAGES: dict[str, tuple[str, str]] = {
     "code_expired": ("الرمز منتهي، اطلب رمز جديد", "The code has expired, request a new one"),
     "invalid_code": ("الرمز غير صحيح", "Incorrect code"),
     "too_many_attempts": ("محاولات كثيرة، اطلب رمز جديد", "Too many attempts, request a new code"),
+    "review_not_allowed": (
+        "تكدر تقيّم الطلب بعد التسليم خلال 7 أيام",
+        "You can rate an order within 7 days of delivery",
+    ),
     "ai_unavailable": ("المساعد الذكي غير متاح حالياً", "The AI assistant is unavailable"),
 }
 

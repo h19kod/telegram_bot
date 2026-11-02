@@ -214,6 +214,16 @@ class BackendClient:
             params={"business": business},
         )
 
+    async def review_order(
+        self, bot_id: str, tg_id: int, business: str | None, order_id: str, rating: int
+    ) -> dict:
+        return await self.request(
+            "POST",
+            self._c(bot_id, tg_id, f"orders/{order_id}/review"),
+            {"rating": rating},
+            params={"business": business},
+        )
+
     async def set_language(self, bot_id: str, tg_id: int, business: str | None, lang: str) -> dict:
         return await self.request(
             "PATCH", self._c(bot_id, tg_id, "me"), {"language": lang}, params={"business": business}
