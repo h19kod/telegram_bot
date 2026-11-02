@@ -82,7 +82,14 @@ TEMPLATES = [
 
 DATABASES = {"default": env.db("DATABASE_URL")}
 DATABASES["default"]["ATOMIC_REQUESTS"] = False
-DATABASES["default"]["CONN_MAX_AGE"] = env.int("DB_CONN_MAX_AGE", default=60)
+# ASGI runs sync views in worker threads: persistent per-thread connections would exhaust
+# PostgreSQL, so use psycopg's connection pool instead (requires CONN_MAX_AGE = 0).
+DATABASES["default"]["CONN_MAX_AGE"] = 0
+DATABASES["default"].setdefault("OPTIONS", {})["pool"] = {
+    "min_size": env.int("DB_POOL_MIN", default=2),
+    "max_size": env.int("DB_POOL_MAX", default=15),
+    "timeout": env.int("DB_POOL_TIMEOUT", default=20),
+}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")

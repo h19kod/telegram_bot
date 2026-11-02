@@ -9,6 +9,7 @@ template). **Never** put real tokens, keys or passwords in code, issues, chats o
 |---|---|---|
 | `DJANGO_SECRET_KEY` | api | Django signing key (sessions, customer tokens, password reset). ≥ 50 random chars |
 | `DATABASE_URL` | api | `postgres://user:pass@host:5432/db` (compose builds it from `POSTGRES_*`) |
+| `DB_POOL_MIN` / `DB_POOL_MAX` / `DB_POOL_TIMEOUT` | api | psycopg connection pool per worker process (defaults 2 / 15 / 20 s). Keep `workers × DB_POOL_MAX` + Celery below PostgreSQL `max_connections` |
 | `FIELD_ENCRYPTION_KEYS` | api | Comma-separated Fernet keys; first encrypts, all decrypt. Rotate by prepending a new key |
 | `INTERNAL_API_SECRET` | api, bot | HMAC secret for the bot → API internal channel. Same value in both |
 | `REDIS_URL` | api, bot | Cache, channel layer and bot data |

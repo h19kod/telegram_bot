@@ -11,7 +11,7 @@ dependencies = [
     "django-filter>=24.3",
     "django-environ>=0.11",
     "django-cors-headers>=4.4",
-    "psycopg[binary]>=3.2",
+    "psycopg[binary,pool]>=3.2",
     "redis>=5.0",
     "django-redis>=5.4",
     "celery>=5.4",
@@ -70,6 +70,7 @@ ignore = ["S101", "RUF012", "S105", "S106", "E501", "RUF001", "RUF002", "RUF003"
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S", "B"]
 "tests/**" = ["S", "B"]
+"core/management/commands/loadtest_storefront.py" = ["S311"]
 
 [tool.coverage.run]
 source = ["apps", "core"]

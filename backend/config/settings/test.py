@@ -21,3 +21,5 @@ TELEGRAM_API_BASE = "https://telegram.test"
 MEDIA_ROOT = "/tmp/sop-test-media"  # noqa: S108
 LOGGING["handlers"]["console"]["formatter"] = "plain"
 LOGGING["root"]["level"] = "WARNING"
+# Tests open connections from many threads (concurrency tests); keep them unpooled.
+DATABASES["default"]["OPTIONS"].pop("pool", None)  # noqa: F405

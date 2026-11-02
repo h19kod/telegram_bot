@@ -86,8 +86,29 @@ quote endpoint no longer requires contact data.
 | 1 | PostgreSQL Row-Level Security not enabled (defence-in-depth layer from 07-SECURITY) | Low — application-level isolation is fully tested | Add RLS policies with a per-transaction `app.business_id` in a hardening release |
 | 2 | Not tested against real Telegram servers (no bot token available in this environment) | Medium | First staging step: connect a BotFather test bot and run the manual checklist (DEVELOPMENT.md §4) |
 | 3 | AI assistant not evaluated with real model output on an Iraqi-Arabic dataset (needs API key) | Medium | Build the ≥150-message eval set before enabling for customers |
-| 4 | No load test yet (k6/Locust) | Medium | Run before launch against staging; concurrency correctness is already tested |
+| 4 | Load test only on a dev machine, not staging hardware | Low | Re-run `loadtest_storefront` on staging before launch (see §4) |
 | 5 | Coupons (DSC-2), multi-branch UI, Playwright E2E suite, Lighthouse audit | Feature gaps | Backlog (08-ROADMAP) |
 | 6 | OpenAPI schema incomplete for APIView endpoints (storefront/internal) | Low (docs only) | Add `extend_schema` serializers; generate TS types from it |
 | 7 | WAL archiving (PITR) not configured; daily dumps only (RPO 24 h vs target 15 min) | Medium | Add wal-g to the backup service |
 | 8 | HSTS preload not enabled | Low | Enable after the domain is stable |
+
+## 4. Load test (2026-11-02)
+
+`manage.py loadtest_storefront` (DEBUG only) simulates Mini App customers end to end: signed
+initData session → shop info → product list → product detail → add to cart → quote → checkout
+(with idempotency key). Server: gunicorn + 3 UvicornWorkers (production command), psycopg pool
+(max 15 per worker), PostgreSQL 17 + Redis in containers, **all on one 4-core dev laptop together
+with the load generator**, DEBUG on.
+
+| Run | Requests | Throughput | Orders/s | Errors | p95 checkout |
+|---|---|---|---|---|---|
+| 30 customers, concurrency 1 | 210 | 23 req/s | — | 0 | 127 ms (p50 94 ms; reads p50 19–25 ms) |
+| 200 customers, concurrency 20 | 1400 | 43 req/s | 6.1 | 0 | 1.95 s |
+| 150 customers, concurrency 40 | 1050 | 37 req/s | 5.3 | 0 | 4.5 s |
+
+- NFR-4 (50k orders/day ≈ 0.6 orders/s average, ~6/s at a 10× peak) is met on this machine; latency
+  under load is CPU queueing (throughput flat from concurrency 20 → 40), not locking or errors.
+- At concurrency 40 PostgreSQL held 42 connections — bounded by the pool (3 × 15), no pool timeouts.
+  Before the pool, ASGI's per-thread persistent connections (`CONN_MAX_AGE=60`) could grow without
+  bound and exhaust `max_connections`.
+- No duplicate orders, no 5xx, no stock/number anomalies.
