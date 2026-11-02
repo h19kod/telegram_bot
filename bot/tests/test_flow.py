@@ -72,7 +72,7 @@ async def test_full_order_conversation(env):
     add = respx.post(f"{B}/customers/9001/cart/items").mock(
         return_value=httpx.Response(201, json=CART))
     respx.get(f"{B}/customers/9001/cart").mock(return_value=httpx.Response(200, json=CART))
-    respx.get(f"{B}/zones").mock(return_value=httpx.Response(200, json=[
+    respx.get(f"{B}/customers/9001/zones").mock(return_value=httpx.Response(200, json=[
         {"id": ZONE, "name": "الكرادة", "fee": 2000}]))
     respx.post(f"{B}/customers/9001/checkout/quote").mock(return_value=httpx.Response(200, json={
         "subtotal": 19000, "delivery_fee": 2000, "discount_total": 0, "total": 21000,
@@ -291,6 +291,35 @@ async def test_bot_checkout_can_spend_points(env):
     assert "11,500" in session.texts()[-1]
     await feed(dp, bot, redis, cb_update("cf:1"))
     assert json.loads(checkout.calls[0].request.content)["redeem_points"] == 300
+
+
+@respx.mock
+async def test_customer_picks_a_branch(env):
+    dp, bot, session, redis = env
+    branches = [{"id": "aaaaaaaa-1111-1111-1111-111111111111", "name": "الكرادة", "address": "", "is_open": True},
+                {"id": "bbbbbbbb-2222-2222-2222-222222222222", "name": "المنصور", "address": "", "is_open": True}]
+    current = {"id": "aaaaaaaa-1111-1111-1111-111111111111"}
+
+    def sess(request):
+        name = "المنصور" if current["id"] == "bbbbbbbb-2222-2222-2222-222222222222" else "الكرادة"
+        return httpx.Response(200, json={
+            "business": {**BUSINESS, "branches": branches,
+                         "branch": {"id": current["id"], "name": name}},
+            "customer": {"language": "ar", "full_name": "", "phone": ""},
+            "is_staff": False, "mini_app_url": None})
+
+    def set_branch(request):
+        current["id"] = json.loads(request.content)["branch_id"]
+        return httpx.Response(200, json={"language": "ar", "branch_id": current["id"]})
+
+    respx.post(f"{B}/session").mock(side_effect=sess)
+    me = respx.patch(f"{B}/customers/9001/me").mock(side_effect=set_branch)
+    await feed(dp, bot, redis, msg_update("/start"))
+    assert "الفرع: الكرادة" in session.texts()[-1]
+    await feed(dp, bot, redis, cb_update("br:"))
+    await feed(dp, bot, redis, cb_update(find_button(session.last_markup(), "br:" + h("bbbbbbbb-2222-2222-2222-222222222222"))))
+    assert json.loads(me.calls[0].request.content) == {"branch_id": "bbbbbbbb-2222-2222-2222-222222222222"}
+    assert any("المنصور" in a for a in session.alerts())
 
 
 @respx.mock

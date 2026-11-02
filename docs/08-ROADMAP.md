@@ -22,11 +22,12 @@ Each phase ends only when its exit criteria pass. "Done" means tested, linted, d
 ## Future (post-v1 backlog)
 
 Done after v1 (2026-11-02): WhatsApp phone verification · ratings & reviews · QR code per
-business/table · dine-in/table ordering · loyalty points · 80 mm receipt printing (thermal
+business/table · dine-in/table ordering · loyalty points · multi-branch (customer branch choice,
+branch management, per-branch staff) · 80 mm receipt printing (thermal
 printers / PDF) · Excel export (in v1).
 
 Open: silent auto-printing (ESC/POS print agent) · voice alert for new orders
-(dashboard already has sound; Telegram voice optional) · full multi-branch UI · local payment
+(dashboard already has sound; Telegram voice optional) · local payment
 gateways (ZainCash, FastPay, Qi Card) when APIs/merchant accounts are available ·
 WhatsApp ordering channel.
 

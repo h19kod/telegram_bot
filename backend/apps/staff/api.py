@@ -10,6 +10,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.businesses.models import Branch
 from apps.platform_admin.audit import audit
 from apps.staff import services
 from apps.staff.models import Membership, Permission, Role, StaffInvitation
@@ -96,6 +97,12 @@ class MemberSerializer(serializers.ModelSerializer):
     has_telegram = serializers.SerializerMethodField()
     role = TenantPrimaryKeyRelatedField(queryset=Role.objects.all())
     role_name = serializers.CharField(source="role.name", read_only=True)
+    branches = TenantPrimaryKeyRelatedField(
+        queryset=Branch.objects.all(),
+        many=True,
+        required=False,
+        help_text="Empty = all branches; otherwise this member only sees these branches' orders",
+    )
 
     class Meta:
         model = Membership
@@ -108,6 +115,7 @@ class MemberSerializer(serializers.ModelSerializer):
             "role_name",
             "is_active",
             "has_telegram",
+            "branches",
             "created_at",
         ]
         read_only_fields = ["id", "is_active", "created_at"]
@@ -138,6 +146,7 @@ class MemberViewSet(
         return (
             Membership.objects.for_business(getattr(self.request, "business", None))
             .select_related("user", "role", "user__telegram")
+            .prefetch_related("branches")
             .filter(is_active=True)
         )
 
@@ -147,6 +156,16 @@ class MemberViewSet(
         return ctx
 
     def perform_update(self, serializer: serializers.BaseSerializer) -> None:
+        branches = serializer.validated_data.get("branches")
+        if branches is not None:
+            serializer.instance.branches.set(branches)
+            audit(
+                self.request,
+                "member.branches",
+                self.request.business,
+                serializer.instance,
+                {"branches": [str(b.id) for b in branches]},
+            )
         role = serializer.validated_data.get("role")
         if role is not None:
             services.change_member_role(serializer.instance, role, self.request.membership)

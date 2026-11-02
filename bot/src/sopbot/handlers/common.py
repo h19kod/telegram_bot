@@ -6,7 +6,7 @@ from typing import Any
 from aiogram.types import CallbackQuery, Message
 
 from sopbot.context import Ctx
-from sopbot.keyboards import main_menu, store_button
+from sopbot.keyboards import BranchPick, main_menu, single, store_button
 from sopbot.texts import t
 
 
@@ -56,6 +56,11 @@ async def send_welcome(message: Message, ctx: Ctx, data: dict[str, Any]) -> None
     elif not info["is_open"]:
         text += "\n\n" + t("closed_now", lang)
     await message.answer(text, reply_markup=main_menu(lang))
+    if len(info.get("branches") or []) > 1:
+        await message.answer(
+            t("your_branch", lang, name=info["branch"]["name"]),
+            reply_markup=single(t("change_branch", lang), BranchPick(id="")),
+        )
     kb = store_button(lang, data.get("mini_app_url"))
     if kb:
         await message.answer("👇", reply_markup=kb)

@@ -69,6 +69,8 @@ const d = {
   new_coupon: ["كود جديد", "New coupon"], product_discounts: ["خصومات المنتجات", "Product discounts"], apply: ["تطبيق", "Apply"], remove_discount: ["إزالة الخصم", "Remove discount"],
   ordering_rules: ["قواعد الطلب", "Ordering rules"], cancel_window: ["مهلة إلغاء الزبون (دقيقة)", "Customer cancel window (min)"],
   auto_reject: ["رفض تلقائي بعد (دقيقة)", "Auto-reject after (min)"], allow_notes: ["السماح بملاحظات الطلب", "Allow order notes"],
+  new_branch: ["فرع جديد", "New branch"], branch_plan_hint: ["عدد الفروع حسب خطتك.", "The number of branches depends on your plan."],
+  all_branches: ["كل الفروع", "All branches"], member_branches: ["الفروع", "Branches"],
   loyalty: ["نقاط الولاء", "Loyalty points"], loyalty_spend: ["المبلغ لكل نقطة", "Spend per point"],
   loyalty_value: ["قيمة النقطة", "Point value"], loyalty_min: ["أقل عدد للاستبدال", "Minimum to redeem"],
   loyalty_example: ["يعني الزبون يرجعله {back}% من مشترياته كنقاط.", "Customers get {back}% back as points."],

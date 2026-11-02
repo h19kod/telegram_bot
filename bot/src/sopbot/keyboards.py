@@ -85,6 +85,19 @@ class OrderCancel(CallbackData, prefix="oc"):
     id: str
 
 
+class BranchPick(CallbackData, prefix="br"):
+    id: str  # "" → show the list
+
+
+def branch_kb(info: dict[str, Any], lang: str) -> InlineKeyboardMarkup:
+    b = InlineKeyboardBuilder()
+    for br in info["branches"]:
+        mark = "✅ " if br["id"] == info["branch"]["id"] else ""
+        b.button(text=f"{mark}📍 {br['name']}", callback_data=BranchPick(id=h(br["id"])))
+    b.adjust(1)
+    return b.as_markup()
+
+
 class OrderRate(CallbackData, prefix="rv"):
     id: str
     stars: int

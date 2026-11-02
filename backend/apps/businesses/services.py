@@ -174,6 +174,31 @@ def bot_for_business(business_id: Any) -> TelegramBot | None:
     return bot or TelegramBot.objects.filter(is_shared_platform_bot=True, is_active=True).first()
 
 
+def customer_branch(customer: Any) -> Branch:
+    """The branch a customer orders from: their choice while it is active, else the default."""
+    if customer.preferred_branch_id:
+        branch = Branch.objects.filter(
+            id=customer.preferred_branch_id, business_id=customer.business_id, is_active=True
+        ).first()
+        if branch:
+            return branch
+    return default_branch(customer.business_id)
+
+
+def choose_branch(customer: Any, branch_id: Any) -> Branch:
+    """Set the customer's branch. A foreign or inactive branch id is simply not found."""
+    from core.errors import NotFoundError
+
+    branch = Branch.objects.filter(
+        id=branch_id, business_id=customer.business_id, is_active=True
+    ).first()
+    if branch is None:
+        raise NotFoundError()
+    customer.preferred_branch = branch
+    customer.save(update_fields=["preferred_branch", "updated_at"])
+    return branch
+
+
 def store_link(business: Business, table: str = "") -> str | None:
     """The t.me link customers open: the shop's own bot, else the shared bot with its slug.
 

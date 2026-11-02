@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
@@ -7,6 +7,7 @@ import { ProductCard, ProductGridSkeleton } from "../components/ProductCard";
 import { Button, cx, Empty, ErrorState, Input } from "../components/ui";
 import { useCart } from "../hooks/queries";
 import { useSession } from "../session";
+import { haptic } from "../telegram";
 
 export function ProductGrid({ params }: { params: Record<string, string | undefined> }) {
   const { api, t } = useSession();
@@ -93,6 +94,7 @@ export function HomePage() {
             </div>
           </div>
         </div>
+        {business.branches.length > 1 && <BranchPicker />}
         {!business.is_active && (
           <p className="mx-4 mt-3 rounded-xl bg-danger/10 p-3 text-[14px] text-danger">
             {t("unavailable_business")}</p>
@@ -152,5 +154,32 @@ export function SearchPage() {
       </form>
       {q && <ProductGrid params={{ search: q }} />}
     </Page>
+  );
+}
+
+/** Multi-branch shops: the customer picks the branch; cart, zones, hours and orders follow it. */
+function BranchPicker() {
+  const { api, business, setBusiness, t } = useSession();
+  const qc = useQueryClient();
+  const change = useMutation({
+    mutationFn: async (id: string) => {
+      await api.updateMe({ branch_id: id });
+      return api.info();
+    },
+    onSuccess: (info) => { haptic.success(); setBusiness(info); qc.invalidateQueries(); },
+    onError: () => haptic.error(),
+  });
+  return (
+    <label className="mx-4 mt-3 flex items-center gap-2 rounded-xl bg-card px-3 py-2 text-[14px]">
+      <span aria-hidden>📍</span>
+      <span className="text-hint">{t("branch")}</span>
+      <select className="min-w-0 flex-1 bg-transparent font-semibold outline-none"
+        value={business.branch.id} disabled={change.isPending}
+        onChange={(e) => change.mutate(e.target.value)}>
+        {business.branches.map((b) => (
+          <option key={b.id} value={b.id}>{b.name}{b.is_open ? "" : ` (${t("closed")})`}</option>
+        ))}
+      </select>
+    </label>
   );
 }

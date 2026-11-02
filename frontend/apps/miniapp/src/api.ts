@@ -123,7 +123,8 @@ export class StoreApi {
     this.request<Order>(`/orders/${id}/cancel`, { method: "POST", body: {} });
 
   me = () => this.request<Customer>("/me");
-  updateMe = (body: Partial<Pick<Customer, "full_name" | "phone" | "language">>) =>
+  updateMe = (body: Partial<Pick<Customer, "full_name" | "phone" | "language">> & {
+    branch_id?: string }) =>
     this.request<Customer>("/me", { method: "PATCH", body });
   sendPhoneCode = (phone: string) =>
     this.request<PhoneCodeSent>("/me/phone/code", { method: "POST", body: { phone } });

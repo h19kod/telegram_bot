@@ -33,6 +33,21 @@ class Command(BaseCommand):
             "seed_demo", owner_password=opts["owner_password"], verbosity=0, stdout=_Null()
         )
         User.objects.filter(email="owner@demo.local").update(language="en")
+        # The customer has confirmed 0770 123 4567 before (WhatsApp code): checkout with that
+        # number passes the phone-verification gate, as for a returning customer.
+        from django.utils import timezone
+
+        from apps.businesses.models import Business
+        from apps.customers.models import Customer
+
+        Customer.objects.create(
+            business=Business.objects.get(slug="demo_shop"),
+            telegram_user_id=opts["customer_id"],
+            first_name="E2E",
+            language="en",
+            phone="+9647701234567",
+            phone_verified_at=timezone.now(),
+        )
         out = _Capture()
         call_command(
             "dev_init_data",

@@ -241,7 +241,7 @@ async def on_fulfilment(cb: CallbackQuery, callback_data: Ful, ctx: Ctx, state: 
 
 async def _ask_zone(message: Message, ctx: Ctx, state: FSMContext) -> None:
     await _save(state, fulfilment="delivery")
-    zones = await ctx.api.zones(ctx.bot_id, ctx.business, ctx.lang)
+    zones = await ctx.api.customer_zones(ctx.bot_id, ctx.tg_id, ctx.business, ctx.lang)
     if not zones:
         await message.answer(t("no_zones", ctx.lang))
         co = await _co(state)

@@ -15,7 +15,7 @@ from rest_framework.throttling import SimpleRateThrottle
 from rest_framework.views import APIView
 
 from apps.businesses.models import Business
-from apps.businesses.services import bot_for_business, default_branch
+from apps.businesses.services import bot_for_business, choose_branch, customer_branch
 from apps.categories.models import Category
 from apps.customers import services as customer_svc
 from apps.customers.models import AddressLabel, CustomerAddress
@@ -109,7 +109,7 @@ class StoreView(APIView):
         return self.request.customer.business
 
     def branch(self):  # type: ignore[no-untyped-def]
-        return default_branch(self.business)
+        return customer_branch(self.customer)
 
 
 class SessionSerializer(serializers.Serializer):
@@ -147,7 +147,7 @@ class SessionView(APIView):
             {
                 "token": issue_customer_token(customer),
                 "customer": _me(customer),
-                "business": business_info(business, default_branch(business)),
+                "business": business_info(business, customer_branch(customer)),
             }
         )
 
@@ -409,6 +409,7 @@ class MeSerializer(serializers.Serializer):
     full_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
     phone = serializers.CharField(max_length=32, required=False, allow_blank=True)
     language = serializers.ChoiceField(choices=Language.choices, required=False)
+    branch_id = serializers.UUIDField(required=False, help_text="Order from this branch")
 
     def validate_phone(self, v: str) -> str:
         if not v:
@@ -428,6 +429,8 @@ class MeView(StoreView):
         s = MeSerializer(data=request.data, partial=True)
         s.is_valid(raise_exception=True)
         data = dict(s.validated_data)
+        if "branch_id" in data:
+            choose_branch(self.customer, data.pop("branch_id"))
         if "phone" in data:  # a typed number is unproven: verification only via /me/phone
             customer_svc.set_unverified_phone(self.customer, data.pop("phone"))
         for k, v in data.items():

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import re
 import time
 
@@ -10,7 +11,7 @@ from aiogram.types import CallbackQuery, Message
 
 from sopbot.context import Ctx
 from sopbot.handlers.common import answer_cb, ensure_session, needs_business, send_welcome
-from sopbot.keyboards import Nav, main_menu
+from sopbot.keyboards import BranchPick, Nav, branch_kb, main_menu, u
 from sopbot.texts import t
 
 router = Router(name="start")
@@ -89,3 +90,25 @@ async def noop(cb: CallbackQuery) -> None:
 async def nav_menu(cb: CallbackQuery, ctx: Ctx) -> None:
     await answer_cb(cb)
     await cb.message.answer("👇", reply_markup=main_menu(ctx.lang))
+
+
+@router.callback_query(BranchPick.filter(F.id == ""))
+async def branch_list(cb: CallbackQuery, ctx: Ctx) -> None:
+    await answer_cb(cb)
+    data = await ensure_session(ctx, cb.from_user)
+    await cb.message.answer(
+        t("choose_branch", ctx.lang), reply_markup=branch_kb(data["business"], ctx.lang)
+    )
+
+
+@router.callback_query(BranchPick.filter(F.id != ""))
+async def branch_set(cb: CallbackQuery, callback_data: BranchPick, ctx: Ctx) -> None:
+    await ctx.api.set_branch(ctx.bot_id, ctx.tg_id, ctx.business, u(callback_data.id))
+    data = await ensure_session(ctx, cb.from_user)
+    name = data["business"]["branch"]["name"]
+    await answer_cb(cb, t("branch_changed", ctx.lang, name=name))
+    with contextlib.suppress(Exception):
+        await cb.message.edit_text(
+            t("branch_changed", ctx.lang, name=name),
+            reply_markup=branch_kb(data["business"], ctx.lang),
+        )

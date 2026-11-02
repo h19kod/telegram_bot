@@ -4,7 +4,7 @@ import { useState } from "react";
 import { PageHeader } from "../components/Shell";
 import { Badge, Button, Card, ErrorBox, errorMessage, Field, Input, Loading, Modal, Pager, Select,
   Table, Toggle, useUi } from "../components/ui";
-import { del, get, patch, post, qs, type Customer, type Invitation, type LoyaltyEntry, type Member, type Paginated,
+import { del, get, patch, post, qs, type Branch, type Customer, type Invitation, type LoyaltyEntry, type Member, type Paginated,
   type Role, type Zone } from "../lib/api";
 import type { TKey } from "../lib/i18n";
 import { useBizKey, useBizPath, useSession } from "../lib/session";
@@ -84,6 +84,8 @@ export function StaffPage() {
   const refresh = () => qc.invalidateQueries({ predicate: (q) => ["members", "roles", "invitations"].includes(q.queryKey[2] as string) });
   const invite = useMutation({ mutationFn: () => post<Invitation>(path("/invitations"), { email: inv.email, role: inv.role || roles.data?.find((r) => !r.is_owner)?.id }),
     onSuccess: (i) => { setLink(i.accept_url); setInv({ email: "", role: "" }); refresh(); }, onError: onErr });
+  const branches = useQuery({ queryKey: key("branches"), queryFn: () => get<Branch[]>(path("/branches")) });
+  const setBranches = useMutation({ mutationFn: (v: { id: string; branches: string[] }) => patch(path(`/members/${v.id}`), { branches: v.branches }), onSuccess: refresh, onError: onErr });
   const changeRole = useMutation({ mutationFn: (v: { id: string; role: string }) => patch(path(`/members/${v.id}`), { role: v.role }), onSuccess: refresh, onError: onErr });
   const remove = useMutation({ mutationFn: (id: string) => del(path(`/members/${id}`)), onSuccess: refresh, onError: onErr });
   const revoke = useMutation({ mutationFn: (id: string) => del(path(`/invitations/${id}`)), onSuccess: refresh });
@@ -102,6 +104,13 @@ export function StaffPage() {
                 {m.has_telegram && <Badge tone="info">✈️ {t("telegram_linked")}</Badge>}
                 <Select aria-label={t("role")} className="w-auto" value={m.role} onChange={(e) => changeRole.mutate({ id: m.id, role: e.target.value })}>
                   {roles.data?.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</Select>
+                {(branches.data?.length ?? 0) > 1 && (
+                  <Select aria-label={t("member_branches")} className="w-auto" value={m.branches[0] ?? ""}
+                    onChange={(e) => setBranches.mutate({ id: m.id, branches: e.target.value ? [e.target.value] : [] })}>
+                    <option value="">{t("all_branches")}</option>
+                    {branches.data?.map((b) => <option key={b.id} value={b.id}>{b.name_ar}</option>)}
+                  </Select>
+                )}
                 <Button size="sm" variant="danger" onClick={async () => { if (await confirm({ title: t("are_you_sure"), danger: true })) remove.mutate(m.id); }}>{t("delete")}</Button>
               </div>
             ))}

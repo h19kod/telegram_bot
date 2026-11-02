@@ -13,7 +13,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.businesses.models import Business
-from apps.businesses.services import default_branch, is_open
+from apps.businesses.services import customer_branch, is_open
 from apps.chatbot.models import (
     AIConversation,
     AIMessage,
@@ -213,7 +213,7 @@ class ToolRunner:
 
     def t_get_business_info(self) -> dict[str, Any]:
         b = self.business
-        branch = default_branch(b)
+        branch = customer_branch(self.customer)
         zones = DeliveryZone.objects.for_business(b).filter(branch=branch, is_active=True)
         return {
             "open_now": is_open(branch) and b.is_active,
@@ -455,7 +455,7 @@ def confirm_proposal(business: Business, customer: Customer, proposal_id: Any) -
         or (timezone.now() - proposal.created_at).total_seconds() > 3600
     ):
         raise DomainError("invalid_transition", {"proposal": proposal.status})
-    branch = default_branch(business)
+    branch = customer_branch(customer)
     for line in proposal.validated_lines:
         cart_svc.add_item(
             customer,

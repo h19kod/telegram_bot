@@ -17,6 +17,10 @@ class Customer(TenantModel):
     # Set only when `phone` was proven: a WhatsApp code or the user's own Telegram contact.
     phone_verified_at = models.DateTimeField(null=True, blank=True)
     language = models.CharField(max_length=2, choices=Language.choices, default=Language.AR)
+    # The branch the customer orders from (multi-branch shops); null → the default branch.
+    preferred_branch = models.ForeignKey(
+        "businesses.Branch", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
     is_blocked = models.BooleanField(default=False)
     blocked_reason = models.CharField(max_length=200, blank=True)
     first_order_at = models.DateTimeField(null=True, blank=True)

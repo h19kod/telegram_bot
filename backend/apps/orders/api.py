@@ -13,7 +13,7 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from apps.orders.models import EventSource, Order, OrderReview, OrderStatus
+from apps.orders.models import EventSource, Fulfilment, Order, OrderReview, OrderStatus
 from apps.orders.serializers import OrderDetailSerializer, OrderListSerializer, TransitionSerializer
 from apps.orders.services.reviews import rating_summary, reply_to_review
 from apps.orders.services.transitions import assign_driver, transition
@@ -31,7 +31,8 @@ class OrderFilter(filters.FilterSet):
     placed_after = filters.IsoDateTimeFilter(field_name="placed_at", lookup_expr="gte")
     placed_before = filters.IsoDateTimeFilter(field_name="placed_at", lookup_expr="lt")
     customer = filters.UUIDFilter(field_name="customer_id")
-    fulfilment = filters.ChoiceFilter(choices=[("delivery", "delivery"), ("pickup", "pickup")])
+    fulfilment = filters.ChoiceFilter(choices=Fulfilment.choices)
+    branch = filters.UUIDFilter(field_name="branch_id")
     search = filters.CharFilter(method="filter_search")
 
     class Meta:
@@ -65,6 +66,9 @@ class OrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
         m: Membership = self.request.membership
         if m.has_perm("orders.view_assigned_only"):
             qs = qs.filter(assigned_driver=m)
+        branch_ids = [b.id for b in m.branches.all()]
+        if branch_ids:  # staff tied to branches see only those branches' orders
+            qs = qs.filter(branch_id__in=branch_ids)
         if self.action == "list":
             return qs.annotate(items_count=Count("items"))
         return qs.select_related("business__settings").prefetch_related(

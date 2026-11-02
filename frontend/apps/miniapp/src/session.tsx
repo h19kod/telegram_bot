@@ -14,6 +14,7 @@ interface Session {
   lang: Lang;
   setLang: (l: Lang) => void;
   setCustomer: (c: Customer) => void;
+  setBusiness: (b: BusinessInfo) => void;
   t: (key: TKey, vars?: Record<string, string | number>) => string;
   money: (amount: number) => string;
 }
@@ -82,24 +83,26 @@ function applyDocumentLang(lang: Lang): void {
 export function SessionProvider(props: { api: StoreApi; business: BusinessInfo;
   customer: Customer; children: ReactNode }) {
   const [customer, setCustomer] = useState(props.customer);
+  const [business, setBusiness] = useState(props.business);
   const [lang, setLangState] = useState<Lang>(props.customer.language);
 
   useLayoutEffect(() => {
     applyDocumentLang(lang);
-    document.title = props.business.name;
+    document.title = business.name;
     props.api.lang = lang;
-  }, [lang, props.api, props.business.name]);
+  }, [lang, props.api, business.name]);
 
   const setLang = useCallback((l: Lang) => setLangState(l), []);
   const value = useMemo<Session>(() => ({
     api: props.api,
-    business: props.business,
+    business: business,
     customer,
     lang,
     setLang,
     setCustomer,
+    setBusiness,
     t: (key, vars) => translate(lang, key, vars),
-    money: (amount) => formatMoney(amount, props.business.currency, lang),
-  }), [props.api, props.business, customer, lang, setLang]);
+    money: (amount) => formatMoney(amount, business.currency, lang),
+  }), [props.api, business, customer, lang, setLang]);
   return <Ctx.Provider value={value}>{props.children}</Ctx.Provider>;
 }

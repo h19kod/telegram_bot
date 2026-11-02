@@ -41,6 +41,16 @@ class OpeningHoursSerializer(serializers.Serializer):
     closes_at = serializers.CharField(help_text="HH:MM")
 
 
+class StoreBranchRefSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+
+
+class StoreBranchSerializer(StoreBranchRefSerializer):
+    address = serializers.CharField()
+    is_open = serializers.BooleanField()
+
+
 class StoreLoyaltySerializer(serializers.Serializer):
     spend_per_point = serializers.IntegerField(help_text="Minor units spent per point earned")
     point_value = serializers.IntegerField(help_text="Minor units one point is worth")
@@ -65,6 +75,8 @@ class StoreInfoSerializer(serializers.Serializer):
     phone_verification_required = serializers.BooleanField()
     rating_avg = serializers.FloatField(allow_null=True, help_text="1.0-5.0, null without reviews")
     rating_count = serializers.IntegerField()
+    branch = StoreBranchRefSerializer(help_text="The branch this info (hours, fulfilment) is for")
+    branches = StoreBranchSerializer(many=True, help_text="Active branches; pick one when > 1")
     loyalty = StoreLoyaltySerializer(allow_null=True, help_text="null when the shop has no points")
     accepts_delivery = serializers.BooleanField()
     accepts_pickup = serializers.BooleanField()

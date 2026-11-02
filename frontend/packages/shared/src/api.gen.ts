@@ -2704,6 +2704,8 @@ export interface components {
             readonly role_name: string;
             readonly is_active: boolean;
             readonly has_telegram: boolean;
+            /** @description Empty = all branches; otherwise this member only sees these branches' orders */
+            branches: string[];
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -2806,6 +2808,8 @@ export interface components {
             placed_at: string;
             /** Format: uuid */
             assigned_driver: string | null;
+            /** Format: uuid */
+            branch: string;
             /** @description List only; null in detail */
             readonly items_count: number | null;
             notes: string;
@@ -2829,8 +2833,6 @@ export interface components {
             readonly items: components["schemas"]["OrderItem"][];
             readonly events: components["schemas"]["OrderEvent"][];
             readonly allowed_actions: components["schemas"]["OrderStatusEnum"][];
-            /** Format: uuid */
-            branch: string;
         };
         OrderDetailRequest: {
             number: number;
@@ -2859,6 +2861,8 @@ export interface components {
             placed_at: string;
             /** Format: uuid */
             assigned_driver?: string | null;
+            /** Format: uuid */
+            branch: string;
             notes?: string;
             /** Format: decimal */
             latitude?: string | null;
@@ -2873,8 +2877,6 @@ export interface components {
             delivered_at?: string | null;
             /** Format: date-time */
             cancelled_at?: string | null;
-            /** Format: uuid */
-            branch: string;
         };
         OrderEvent: {
             from_status: string;
@@ -2970,6 +2972,8 @@ export interface components {
             placed_at: string;
             /** Format: uuid */
             assigned_driver: string | null;
+            /** Format: uuid */
+            branch: string;
             /** @description List only; null in detail */
             readonly items_count: number | null;
         };
@@ -3257,10 +3261,17 @@ export interface components {
             full_name?: string;
             phone?: string;
             language?: components["schemas"]["LanguageEnum"];
+            /**
+             * Format: uuid
+             * @description Order from this branch
+             */
+            branch_id?: string;
         };
         PatchedMemberRequest: {
             /** Format: uuid */
             role?: string;
+            /** @description Empty = all branches; otherwise this member only sees these branches' orders */
+            branches?: string[];
         };
         PatchedOptionGroupRequest: {
             name_ar?: string;
@@ -3776,6 +3787,18 @@ export interface components {
          * @enum {string}
          */
         SourceEnum: "dashboard" | "telegram" | "mini_app" | "system" | "customer";
+        StoreBranch: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            address: string;
+            is_open: boolean;
+        };
+        StoreBranchRef: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
         StoreCategory: {
             /** Format: uuid */
             readonly id: string;
@@ -3820,6 +3843,10 @@ export interface components {
              */
             rating_avg: number | null;
             rating_count: number;
+            /** @description The branch this info (hours, fulfilment) is for */
+            branch: components["schemas"]["StoreBranchRef"];
+            /** @description Active branches; pick one when > 1 */
+            branches: components["schemas"]["StoreBranch"][];
             /** @description null when the shop has no points */
             loyalty: components["schemas"]["StoreLoyalty"] | null;
             accepts_delivery: boolean;
@@ -7268,6 +7295,7 @@ export interface operations {
         parameters: {
             query?: {
                 assigned_driver?: string;
+                branch?: string;
                 /**
                  * @description * `bot` - Bot
                  *     * `mini_app` - Mini App
@@ -7277,10 +7305,11 @@ export interface operations {
                 channel?: "ai" | "bot" | "dashboard" | "mini_app";
                 customer?: string;
                 /**
-                 * @description * `delivery` - delivery
-                 *     * `pickup` - pickup
+                 * @description * `delivery` - Delivery
+                 *     * `pickup` - Pickup
+                 *     * `dine_in` - Dine In
                  */
-                fulfilment?: "delivery" | "pickup";
+                fulfilment?: "delivery" | "dine_in" | "pickup";
                 /** @description أي حقل يجب استخدامه عند ترتيب النتائج. */
                 ordering?: string;
                 /** @description رقم الصفحة ضمن النتائج المقسمة. */

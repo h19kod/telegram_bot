@@ -224,6 +224,23 @@ class BackendClient:
             params={"business": business},
         )
 
+    async def customer_zones(
+        self, bot_id: str, tg_id: int, business: str | None, lang: str
+    ) -> list[dict]:
+        return await self.request(
+            "GET", self._c(bot_id, tg_id, "zones"), params={"business": business, "lang": lang}
+        )
+
+    async def set_branch(
+        self, bot_id: str, tg_id: int, business: str | None, branch_id: str
+    ) -> dict:
+        return await self.request(
+            "PATCH",
+            self._c(bot_id, tg_id, "me"),
+            {"branch_id": branch_id},
+            params={"business": business},
+        )
+
     async def set_language(self, bot_id: str, tg_id: int, business: str | None, lang: str) -> dict:
         return await self.request(
             "PATCH", self._c(bot_id, tg_id, "me"), {"language": lang}, params={"business": business}

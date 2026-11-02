@@ -84,8 +84,34 @@ export function SettingsPage() {
           </div>
         </Card>
         {branches.data?.map((br) => <BranchCard key={br.id} branch={br} />)}
+        <NewBranchCard />
       </div>
     </>
+  );
+}
+
+function NewBranchCard() {
+  const { t } = useSession();
+  const key = useBizKey();
+  const path = useBizPath();
+  const qc = useQueryClient();
+  const { toast } = useUi();
+  const [f, setF] = useState({ name_ar: "", name_en: "", address: "" });
+  const create = useMutation({
+    mutationFn: () => post(path("/branches"), f),
+    onSuccess: () => { toast(t("saved")); setF({ name_ar: "", name_en: "", address: "" }); qc.invalidateQueries({ queryKey: key("branches") }); },
+    onError: (e) => toast(errorMessage(e, t("error")), "error"),
+  });
+  return (
+    <Card title={`➕ ${t("new_branch")}`}>
+      <form className="grid gap-3 sm:grid-cols-3" onSubmit={(e) => { e.preventDefault(); if (f.name_ar.trim()) create.mutate(); }}>
+        <Field label={t("name_ar")}><Input value={f.name_ar} onChange={(e) => setF({ ...f, name_ar: e.target.value })} /></Field>
+        <Field label={t("name_en")}><Input dir="ltr" value={f.name_en} onChange={(e) => setF({ ...f, name_en: e.target.value })} /></Field>
+        <Field label={t("address")}><Input value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} /></Field>
+        <div className="sm:col-span-3"><Button disabled={!f.name_ar.trim() || create.isPending}>{t("add")}</Button>
+          <span className="ms-3 text-[12px] text-hint">{t("branch_plan_hint")}</span></div>
+      </form>
+    </Card>
   );
 }
 
@@ -98,12 +124,24 @@ function BranchCard({ branch }: { branch: Branch }) {
   const [hours, setHours] = useState(branch.hours.map((h) => ({ ...h, opens_at: h.opens_at.slice(0, 5), closes_at: h.closes_at.slice(0, 5) })));
   const days = t("weekdays").split(",");
   const refresh = () => qc.invalidateQueries({ queryKey: key("branches") });
-  const flag = useMutation({ mutationFn: (body: Partial<Branch>) => patch(path(`/branches/${branch.id}`), body), onSuccess: refresh });
+  const { confirm } = useUi();
+  const [names, setNames] = useState({ name_ar: branch.name_ar, name_en: branch.name_en, address: branch.address });
+  const flag = useMutation({ mutationFn: (body: Partial<Branch>) => patch(path(`/branches/${branch.id}`), body), onSuccess: refresh,
+    onError: (e) => toast(errorMessage(e, t("error")), "error") });
+  const close = useMutation({ mutationFn: () => del(path(`/branches/${branch.id}`)), onSuccess: refresh,
+    onError: (e) => toast(errorMessage(e, t("error")), "error") });
   const saveHours = useMutation({ mutationFn: () => put(path(`/branches/${branch.id}/hours`), hours), onSuccess: () => { toast(t("saved")); refresh(); },
     onError: (e) => toast(errorMessage(e, t("error")), "error") });
   return (
     <Card title={<span>{branch.name_ar} <Badge tone={branch.is_open_now ? "success" : "danger"}>{branch.is_open_now ? t("open_now") : t("closed_now")}</Badge></span>}
       actions={<Button size="sm" disabled={saveHours.isPending} onClick={() => saveHours.mutate()}>{t("save")}</Button>}>
+      <form className="mb-4 flex flex-wrap items-end gap-2" onSubmit={(e) => { e.preventDefault(); flag.mutate({ name_ar: names.name_ar, name_en: names.name_en, address: names.address }); }}>
+        <Field label={t("name_ar")}><Input value={names.name_ar} onChange={(e) => setNames({ ...names, name_ar: e.target.value })} /></Field>
+        <Field label={t("name_en")}><Input dir="ltr" value={names.name_en} onChange={(e) => setNames({ ...names, name_en: e.target.value })} /></Field>
+        <Field label={t("address")}><Input value={names.address} onChange={(e) => setNames({ ...names, address: e.target.value })} /></Field>
+        <Button size="sm" variant="secondary" disabled={!names.name_ar.trim()}>{t("save")}</Button>
+        {!branch.is_default && <Button size="sm" variant="danger" type="button" onClick={async () => { if (await confirm({ title: t("are_you_sure"), danger: true })) close.mutate(); }}>{t("delete")}</Button>}
+      </form>
       <div className="mb-4 flex flex-wrap gap-4">
         <Toggle checked={branch.is_temporarily_closed} onChange={(v) => flag.mutate({ is_temporarily_closed: v })} label={t("temporarily_closed")} />
         <Toggle checked={branch.accepts_delivery} onChange={(v) => flag.mutate({ accepts_delivery: v })} label={t("accepts_delivery")} />

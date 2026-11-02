@@ -6,7 +6,7 @@ import { PageHeader } from "../components/Shell";
 import { STATUSES, StatusBadge } from "../components/status";
 import { Badge, Button, cx, ErrorBox, errorMessage, Input, Loading, Modal, Pager, Select, Table,
   useUi } from "../components/ui";
-import { download, get, post, qs, type Member, type OrderDetail, type OrderRow, type OrderStatus,
+import { download, get, post, qs, type Branch, type Member, type OrderDetail, type OrderRow, type OrderStatus,
   type Paginated } from "../lib/api";
 import type { TKey } from "../lib/i18n";
 import { useLiveOrders } from "../lib/live";
@@ -29,7 +29,9 @@ export function OrdersPage() {
   const filters = { status: params.get("status") ?? "", search: params.get("search") ?? "",
     placed_after: params.get("from") ? `${params.get("from")}T00:00:00+03:00` : "",
     placed_before: params.get("to") ? `${params.get("to")}T23:59:59+03:00` : "",
+    branch: params.get("branch") ?? "",
     page: params.get("page") ?? "1" };
+  const branches = useQuery({ queryKey: key("branches"), queryFn: () => get<Branch[]>(path("/branches")) });
   const set = (k: string, v: string) => {
     const next = new URLSearchParams(params);
     if (v) next.set(k, v); else next.delete(k);
@@ -54,6 +56,12 @@ export function OrdersPage() {
           <form onSubmit={(e) => { e.preventDefault(); set("search", search.trim()); }} className="min-w-52 flex-1">
             <Input type="search" placeholder={`${t("search")} #1042 / 0770…`} value={search} onChange={(e) => setSearch(e.target.value)} />
           </form>
+          {(branches.data?.length ?? 0) > 1 && (
+            <Select aria-label={t("all_branches")} className="w-auto" value={filters.branch} onChange={(e) => set("branch", e.target.value)}>
+              <option value="">{t("all_branches")}</option>
+              {branches.data?.map((b) => <option key={b.id} value={b.id}>{(lang === "en" && b.name_en) || b.name_ar}</option>)}
+            </Select>
+          )}
           <Select aria-label={t("status")} className="w-auto" value={filters.status} onChange={(e) => set("status", e.target.value)}>
             <option value="">{t("all_statuses")}</option>
             {STATUSES.map((s) => <option key={s} value={s}>{t(`status_${s}` as TKey)}</option>)}

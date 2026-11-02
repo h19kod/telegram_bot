@@ -151,6 +151,10 @@ Default role permissions:
 | is_blocked | bool + reason | business can block abusive customers |
 | first_order_at, last_order_at, orders_count, total_spent | denormalised stats | updated in order service |
 
+Customer also has `preferred_branch` (nullable FK): the branch a multi-branch shop's customer
+orders from. Cart, delivery zones, hours and checkout use it while it is active, else the default
+branch. Staff `Membership.branches` (empty = all) restricts the orders a member sees.
+
 **PhoneVerification** (T) — customer FK, phone (E.164), code_hash (HMAC-SHA256 of the 6-digit code;
 the code itself is never stored), expires_at (10 min), attempts (max 5), verified_at. A new code
 expires the previous ones.

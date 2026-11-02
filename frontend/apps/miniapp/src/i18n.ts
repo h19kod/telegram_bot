@@ -82,6 +82,7 @@ const dict = {
   thanks_rating: ["شكراً على تقييمك 🌹", "Thanks for your rating 🌹"],
   stars_n: ["{n} من 5", "{n} of 5"],
   reviews_n: ["{n} تقييم", "{n} reviews"],
+  branch: ["الفرع", "Branch"],
   use_points: ["استخدم نقاطي", "Use my points"],
   points_worth: ["عندك {n} نقطة = {v}", "You have {n} points = {v}"],
   points_used: ["نقاط ({n})", "Points ({n})"],

@@ -140,7 +140,7 @@ Status codes: 400 validation, 401 unauthenticated, 403 authenticated-but-forbidd
 | POST | `checkout` | Create order (Idempotency-Key required) |
 | GET | `orders`, `orders/{id}` | History & tracking |
 | POST | `orders/{id}/cancel` | Within window |
-| GET/PATCH | `me` | Name, phone, language. A changed phone is stored unverified |
+| GET/PATCH | `me` | Name, phone, language, `branch_id` (pick a branch; foreign/inactive → 404). A changed phone is stored unverified |
 | POST | `checkout`, `checkout/quote` + `redeem_points` | Loyalty points as a discount (capped by balance and by what the order still costs); quote returns `points_used`, `points_discount` |
 | POST | `orders/{id}/review` | `{rating 1-5, comment?}` → order (with `review`, `can_review`); own delivered order, 7 days |
 | POST | `me/phone/code` | `{phone}` → 202 `{phone, expires_in, resend_in}`; WhatsApp code (60 s resend, 5/h per customer and per number) |
@@ -178,6 +178,8 @@ Status codes: 400 validation, 401 unauthenticated, 403 authenticated-but-forbidd
 | POST | `bots/{bot_id}/ai/message` | AI turn → reply + optional proposal |
 | POST | `bots/{bot_id}/ai/proposals/{id}/confirm` | Convert proposal into cart/checkout |
 | POST | `bots/{bot_id}/support` | Customer support message |
+| GET | `bots/{bot_id}/customers/{tg_id}/zones` | Zones of the customer's branch (the bot's checkout uses this) |
+| PATCH | `bots/{bot_id}/customers/{tg_id}/me` | `{language?, branch_id?}` |
 | POST | `bots/{bot_id}/customers/{tg_id}/orders/{id}/review` | Rating from the bot's ⭐ buttons |
 | POST | `bots/{bot_id}/customers/{tg_id}/phone/code` · `phone/confirm` | WhatsApp verification, same rules as the Mini App |
 | POST | `bots/{bot_id}/customers/{tg_id}/phone/contact` | `{phone, contact_user_id}`: the user shared their *own* Telegram contact → verified |

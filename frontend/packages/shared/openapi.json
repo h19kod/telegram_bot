@@ -5308,6 +5308,14 @@
                         }
                     },
                     {
+                        "in": "query",
+                        "name": "branch",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
                         "in": "path",
                         "name": "business_id",
                         "schema": {
@@ -5345,10 +5353,11 @@
                             "type": "string",
                             "enum": [
                                 "delivery",
+                                "dine_in",
                                 "pickup"
                             ]
                         },
-                        "description": "* `delivery` - delivery\n* `pickup` - pickup"
+                        "description": "* `delivery` - Delivery\n* `pickup` - Pickup\n* `dine_in` - Dine In"
                     },
                     {
                         "name": "ordering",
@@ -13143,6 +13152,14 @@
                         "type": "boolean",
                         "readOnly": true
                     },
+                    "branches": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "description": "Empty = all branches; otherwise this member only sees these branches' orders"
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
@@ -13150,6 +13167,7 @@
                     }
                 },
                 "required": [
+                    "branches",
                     "created_at",
                     "email",
                     "full_name",
@@ -13513,6 +13531,10 @@
                         "format": "uuid",
                         "nullable": true
                     },
+                    "branch": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
                     "items_count": {
                         "type": "integer",
                         "readOnly": true,
@@ -13588,10 +13610,6 @@
                             "$ref": "#/components/schemas/OrderStatusEnum"
                         },
                         "readOnly": true
-                    },
-                    "branch": {
-                        "type": "string",
-                        "format": "uuid"
                     }
                 },
                 "required": [
@@ -13722,6 +13740,10 @@
                         "format": "uuid",
                         "nullable": true
                     },
+                    "branch": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
                     "notes": {
                         "type": "string",
                         "maxLength": 500
@@ -13761,10 +13783,6 @@
                         "type": "string",
                         "format": "date-time",
                         "nullable": true
-                    },
-                    "branch": {
-                        "type": "string",
-                        "format": "uuid"
                     }
                 },
                 "required": [
@@ -14117,6 +14135,10 @@
                         "format": "uuid",
                         "nullable": true
                     },
+                    "branch": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
                     "items_count": {
                         "type": "integer",
                         "readOnly": true,
@@ -14126,6 +14148,7 @@
                 },
                 "required": [
                     "assigned_driver",
+                    "branch",
                     "channel",
                     "currency",
                     "customer",
@@ -14952,6 +14975,11 @@
                     },
                     "language": {
                         "$ref": "#/components/schemas/LanguageEnum"
+                    },
+                    "branch_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Order from this branch"
                     }
                 }
             },
@@ -14961,6 +14989,14 @@
                     "role": {
                         "type": "string",
                         "format": "uuid"
+                    },
+                    "branches": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "description": "Empty = all branches; otherwise this member only sees these branches' orders"
                     }
                 }
             },
@@ -16749,6 +16785,46 @@
                 "type": "string",
                 "description": "* `dashboard` - Dashboard\n* `telegram` - Telegram\n* `mini_app` - Mini App\n* `system` - System\n* `customer` - Customer"
             },
+            "StoreBranch": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": "string"
+                    },
+                    "is_open": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "address",
+                    "id",
+                    "is_open",
+                    "name"
+                ]
+            },
+            "StoreBranchRef": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name"
+                ]
+            },
             "StoreCategory": {
                 "type": "object",
                 "properties": {
@@ -16884,6 +16960,21 @@
                     "rating_count": {
                         "type": "integer"
                     },
+                    "branch": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StoreBranchRef"
+                            }
+                        ],
+                        "description": "The branch this info (hours, fulfilment) is for"
+                    },
+                    "branches": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StoreBranch"
+                        },
+                        "description": "Active branches; pick one when > 1"
+                    },
                     "loyalty": {
                         "allOf": [
                             {
@@ -16941,6 +17032,8 @@
                     "address",
                     "ai_enabled",
                     "allow_order_notes",
+                    "branch",
+                    "branches",
                     "business_type",
                     "cover",
                     "currency",

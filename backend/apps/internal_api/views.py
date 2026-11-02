@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.services import complete_link, user_for_telegram
 from apps.businesses.models import Business, TelegramBot
-from apps.businesses.services import default_branch
+from apps.businesses.services import choose_branch, customer_branch, default_branch
 from apps.categories.models import Category
 from apps.customers import services as customer_svc
 from apps.customers.models import Customer
@@ -147,7 +147,7 @@ class SessionView(InternalView):
         )
         return Response(
             {
-                "business": business_info(business, default_branch(business)),
+                "business": business_info(business, customer_branch(customer)),
                 "customer": {
                     "id": str(customer.id),
                     "language": customer.language,
@@ -236,7 +236,7 @@ class CustomerScoped(InternalView):
 
 
 def _cart(customer: Customer, business: Business) -> dict[str, Any]:
-    branch = default_branch(business)
+    branch = customer_branch(customer)
     data = priced_cart_data(
         cart_svc.price_cart(cart_svc.get_active_cart(customer, branch, create=False))
     )
@@ -251,7 +251,7 @@ class CartView(CustomerScoped):
 
     def delete(self, request: Request, bot_id: uuid.UUID, tg_id: int) -> Response:
         business, customer = self.ctx(request, bot_id, tg_id)
-        cart_svc.clear(customer, default_branch(business))
+        cart_svc.clear(customer, customer_branch(customer))
         return Response(_cart(customer, business))
 
 
@@ -265,7 +265,7 @@ class CartItemsView(CustomerScoped):
         d = s.validated_data
         cart_svc.add_item(
             customer,
-            default_branch(business),
+            customer_branch(customer),
             d["product_id"],
             d["option_ids"],
             d["quantity"],
@@ -295,23 +295,25 @@ class CartItemView(CustomerScoped):
 
 class QuoteView(CustomerScoped):
     def post(self, request: Request, bot_id: uuid.UUID, tg_id: int) -> Response:
-        business, customer = self.ctx(request, bot_id, tg_id)
+        _, customer = self.ctx(request, bot_id, tg_id)
         s = QuoteSerializer(data=request.data)
         s.is_valid(raise_exception=True)
-        q = quote(customer, default_branch(business), checkout_input(s.validated_data, "bot", None))
+        q = quote(
+            customer, customer_branch(customer), checkout_input(s.validated_data, "bot", None)
+        )
         return Response(quote_data(q))
 
 
 class CheckoutView(CustomerScoped):
     def post(self, request: Request, bot_id: uuid.UUID, tg_id: int) -> Response:
-        business, customer = self.ctx(request, bot_id, tg_id)
+        _, customer = self.ctx(request, bot_id, tg_id)
         key = idempotency_key(request)
         s = CheckoutSerializer(data=request.data)
         s.is_valid(raise_exception=True)
         channel = request.data.get("channel", "bot")
         channel = channel if channel in ("bot", "ai") else "bot"
         order, created = place_order(
-            customer, default_branch(business), checkout_input(s.validated_data, channel, key)
+            customer, customer_branch(customer), checkout_input(s.validated_data, channel, key)
         )
         order = _orders(customer).get(pk=order.pk)
         return Response(StoreOrderSerializer(order).data, status=201 if created else 200)
@@ -377,7 +379,23 @@ class CustomerMeView(CustomerScoped):
         if lang in ("ar", "en"):
             customer.language = lang
             customer.save(update_fields=["language", "updated_at"])
-        return Response({"language": customer.language})
+        if branch_id := request.data.get("branch_id"):
+            choose_branch(customer, serializers.UUIDField().run_validation(branch_id))
+        return Response(
+            {"language": customer.language, "branch_id": str(customer_branch(customer).id)}
+        )
+
+
+class CustomerZonesView(CustomerScoped):
+    """Delivery zones of the customer's branch."""
+
+    def get(self, request: Request, bot_id: uuid.UUID, tg_id: int) -> Response:
+        business, customer = self.ctx(request, bot_id, tg_id)
+        _lang(request)
+        qs = DeliveryZone.objects.for_business(business).filter(
+            branch=customer_branch(customer), is_active=True
+        )
+        return Response(StoreZoneSerializer(qs, many=True).data)
 
 
 class PhoneCodeView(CustomerScoped):

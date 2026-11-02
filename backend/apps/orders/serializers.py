@@ -91,6 +91,7 @@ class OrderListSerializer(serializers.ModelSerializer):
             "payment_status",
             "placed_at",
             "assigned_driver",
+            "branch",
             "items_count",
         ]
 
@@ -121,7 +122,6 @@ class OrderDetailSerializer(OrderListSerializer):
             "items",
             "events",
             "allowed_actions",
-            "branch",
         ]
 
     @extend_schema_field(

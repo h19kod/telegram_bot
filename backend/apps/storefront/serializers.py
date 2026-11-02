@@ -234,6 +234,16 @@ def business_info(business: Business, branch: Branch) -> dict[str, Any]:
         "welcome_message": localized(cfg, "welcome_message", lang),
         "ai_enabled": cfg.ai_enabled and _ai_entitled(business),
         "address": branch.address,
+        "branch": {"id": str(branch.id), "name": localized(branch, "name", lang)},
+        "branches": [
+            {
+                "id": str(b.id),
+                "name": localized(b, "name", lang),
+                "address": b.address,
+                "is_open": is_open(b),
+            }
+            for b in business.branches.filter(is_active=True).order_by("-is_default", "name_ar")
+        ],
         "hours": hours,
     }
 
