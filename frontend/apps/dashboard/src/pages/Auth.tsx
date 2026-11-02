@@ -12,7 +12,7 @@ function AuthCard({ title, children }: { title: string; children: ReactNode }) {
     <div className="grid min-h-dvh place-items-center p-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 grid size-12 place-items-center rounded-xl bg-accent text-2xl text-white">🛒</div>
+          <div className="mx-auto mb-3 grid size-12 place-items-center rounded-xl bg-accent text-2xl text-on-accent">🛒</div>
           <h1 className="text-[22px] font-bold">{title}</h1>
         </div>
         <div className="rounded-xl border border-line bg-card p-6 shadow-sm">{children}</div>

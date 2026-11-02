@@ -151,7 +151,7 @@ function ProductEditor({ id, categories, onClose, onSaved }: { id: string; categ
                     <div key={img.id} className="relative">
                       <img src={img.thumbnail || img.image || undefined} alt="" className="size-24 rounded-lg object-cover" />
                       <button type="button" aria-label={t("delete")} onClick={() => delImg.mutate(img.id)}
-                        className="absolute -top-2 -end-2 grid size-6 place-items-center rounded-full bg-danger text-[12px] text-white">✕</button>
+                        className="absolute -top-2 -end-2 grid size-6 place-items-center rounded-full bg-danger text-[12px] text-on-accent">✕</button>
                     </div>
                   ))}
                 </div>

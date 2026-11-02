@@ -8,7 +8,7 @@ Date: 2026-11-01 · Scope: backend, bot service, Mini App, dashboard, deployment
 |---|---|---|
 | Backend (pytest, real PostgreSQL 17 + Redis) | **151 passed, 0 failed** (2026-11-02) | 83 % line coverage overall; checkout 94 %, transitions 94 %, entitlements 97 %, AI 89 % |
 | Bot (pytest + real dispatcher, mocked Telegram/backend) | **5 passed** | Full ordering conversation, duplicate/stale staff buttons, reject reasons, throttling |
-| End-to-end (Playwright, real backend + both apps) | **3 passed** | Mini App order → dashboard accept → customer sees status (`make e2e`) |
+| End-to-end (Playwright, real backend + both apps) | **7 passed** | Mini App order → dashboard accept → customer sees status; axe WCAG 2.1 AA scan of 7 Mini App + 6 dashboard screens in light and dark theme: 0 violations (`make e2e`) |
 | Frontend shared (Vitest) | **13 passed** | Money formatting, Iraqi phone hints, Arabic-Indic digits |
 | TypeScript (`tsc --noEmit`, strict) | Mini App ✓, Dashboard ✓ | Production builds succeed (110 KB / 125 KB gzipped JS) |
 | Ruff lint/format | ✓ backend, ✓ bot | |
@@ -90,7 +90,7 @@ quote endpoint no longer requires contact data.
 | 2 | Not tested against real Telegram servers (no bot token available in this environment) | Medium | First staging step: connect a BotFather test bot and run the manual checklist (DEVELOPMENT.md §4) |
 | 3 | AI assistant not evaluated with real model output on an Iraqi-Arabic dataset (needs API key) | Medium | Build the ≥150-message eval set before enabling for customers |
 | 4 | Load test only on a dev machine, not staging hardware | Low | Re-run `loadtest_storefront` on staging before launch (see §4) |
-| 5 | Multi-branch UI, Lighthouse audit (coupons and the Playwright E2E order flow are done) | Feature gaps | Backlog (08-ROADMAP) |
+| 5 | Lighthouse mobile (Mini App, production build, gzip): accessibility / best practices / SEO 100, CLS 0; performance 78–85 on a loaded dev laptop (target 90). LCP is the business name, rendered after JS + the initData session round-trip | Medium | Re-measure on staging hardware; if still < 90, inline the session bootstrap or split vendor chunks. Multi-branch UI is post-v1 (08-ROADMAP) |
 | 6 | OpenAPI complete (0 errors / 0 warnings, contract-tested, TS types generated); Mini App and dashboard use the generated types | Low | —; vitest upgraded to 4.1.12 (tinypool/@vitest/mocker advisories gone). Accepted: `minimatch` ReDoS (GHSA-g3hv-75wg-m249) inside openapi-typescript → @redocly, build-time only on our own schema file; fixed only in minimatch 11, which @redocly 1.x cannot use |
 | 7 | PITR in place (§5); off-site RPO depends on the host rclone schedule | Low | Use the 5-minute off-site sync from BACKUP_RESTORE.md; add backup-age alerting |
 | 8 | HSTS preload not enabled | Low | Enable after the domain is stable |

@@ -1,28 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f6f7f9; --bg2: #eef0f3; --card: #ffffff; --fg: #15171c; --hint: #6b7280;
-  --line: #e4e7ec; --accent: #e8543a; --danger: #dc3545; --success: #15803d;
-  --warn: #b45309; --info: #2563eb;
+  /* Meets WCAG 2.1 AA (≥ 4.5:1) on bg, bg2, card and on their own 8–15 % tints (badges); checked by e2e/a11y.spec.ts. */
+  --bg: #f6f7f9; --bg2: #eef0f3; --card: #ffffff; --fg: #15171c; --hint: #666c7a;
+  --line: #e4e7ec; --accent: #a33a29; --danger: #ac2a36; --success: #116c33;
+  --warn: #974608; --info: #1b55c8; --on-accent: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0f1115; --bg2: #191c22; --card: #15181d; --fg: #eef0f3; --hint: #9aa1ac;
     --line: #262a31; --accent: #ff6a4d; --danger: #f2626e; --success: #34c46e;
-    --warn: #e7a33e; --info: #6aa0ff;
+    --warn: #e7a33e; --info: #6aa0ff; --on-accent: #0f1115;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0f1115; --bg2: #191c22; --card: #15181d; --fg: #eef0f3; --hint: #9aa1ac;
   --line: #262a31; --accent: #ff6a4d; --danger: #f2626e; --success: #34c46e;
-  --warn: #e7a33e; --info: #6aa0ff;
+  --warn: #e7a33e; --info: #6aa0ff; --on-accent: #0f1115;
 }
 
 @theme {
   --color-bg: var(--bg); --color-bg2: var(--bg2); --color-card: var(--card);
   --color-fg: var(--fg); --color-hint: var(--hint); --color-line: var(--line);
   --color-accent: var(--accent); --color-danger: var(--danger); --color-success: var(--success);
-  --color-warn: var(--warn); --color-info: var(--info);
+  --color-warn: var(--warn); --color-info: var(--info); --color-on-accent: var(--on-accent);
   --font-sans: "IBM Plex Sans Arabic", "Inter", system-ui, sans-serif;
 }
 

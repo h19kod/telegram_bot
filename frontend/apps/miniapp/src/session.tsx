@@ -1,6 +1,6 @@
 import type { Lang } from "@sop/shared";
 import { formatMoney } from "@sop/shared";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState,
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState,
   type ReactNode } from "react";
 
 import { StoreApi, type BusinessInfo, type Customer } from "./api";
@@ -58,11 +58,13 @@ export function useBoot(): [Boot, () => void] {
     }
     const api = new StoreApi(slug, initData);
     api.lang = initialLang(initData);
+    applyDocumentLang(api.lang); // before any content renders: no RTL↔LTR flip (layout shift)
     api
       .openSession()
       .then(async ({ business, customer }) => {
         if (customer.language !== api.lang) {
           api.lang = customer.language; // saved preference wins; re-localise business info
+          applyDocumentLang(api.lang);
           business = await api.info();
         }
         setBoot({ state: "ready", api, business, customer });
@@ -72,14 +74,18 @@ export function useBoot(): [Boot, () => void] {
   return [boot, () => setAttempt((n) => n + 1)];
 }
 
+function applyDocumentLang(lang: Lang): void {
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+}
+
 export function SessionProvider(props: { api: StoreApi; business: BusinessInfo;
   customer: Customer; children: ReactNode }) {
   const [customer, setCustomer] = useState(props.customer);
   const [lang, setLangState] = useState<Lang>(props.customer.language);
 
-  useEffect(() => {
-    document.documentElement.lang = lang;
-    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+  useLayoutEffect(() => {
+    applyDocumentLang(lang);
     document.title = props.business.name;
     props.api.lang = lang;
   }, [lang, props.api, props.business.name]);

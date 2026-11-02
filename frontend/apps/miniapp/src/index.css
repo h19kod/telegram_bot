@@ -7,14 +7,16 @@
   --tg-bg-2: #f3f4f6;
   --tg-section: #ffffff;
   --tg-text: #14161a;
-  --tg-hint: #8b909a;
-  --tg-link: #2f6fe4;
-  --tg-button: #e8543a;
+  /* Fallback palette meets WCAG 2.1 AA (≥ 4.5:1) on both bg and bg-2. */
+  --tg-hint: #6b6e76;
+  --tg-link: #2c69d8;
+  --tg-button: #a33a29;
   --tg-button-text: #ffffff;
-  --tg-danger: #e5484d;
+  --tg-danger: #c43d42;
+  --on-danger: #ffffff;
   --line: color-mix(in oklab, var(--tg-text) 9%, transparent);
-  --success: #1f9d55;
-  --warn: #c98a04;
+  --success: #187d44;
+  --warn: #926402;
 }
 
 :root[data-theme="dark"] {
@@ -25,7 +27,11 @@
   --tg-hint: #8d939e;
   --tg-link: #6aa0ff;
   --tg-button: #ff6a4d;
-  --tg-button-text: #ffffff;
+  --tg-button-text: #17191d;
+  --tg-danger: #e75a5e;
+  --on-danger: #17191d;
+  --success: #2bb36a;
+  --warn: #e0a526;
   --line: color-mix(in oklab, var(--tg-text) 12%, transparent);
 }
 
@@ -39,6 +45,7 @@
   --color-accent: var(--tg-button);
   --color-on-accent: var(--tg-button-text);
   --color-danger: var(--tg-danger);
+  --color-on-danger: var(--on-danger);
   --color-line: var(--line);
   --color-success: var(--success);
   --color-warn: var(--warn);

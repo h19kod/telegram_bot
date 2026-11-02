@@ -103,7 +103,7 @@ function ProductView({ product }: { product: ProductDetail }) {
           <h1 className="text-[22px] leading-tight font-bold">{product.name}</h1>
           {product.discount_percent ? (
             <span className="shrink-0 rounded-full bg-danger px-2.5 py-1 text-[12px] font-bold
-              text-white">-{product.discount_percent}%</span>
+              text-on-danger">-{product.discount_percent}%</span>
           ) : null}
         </div>
         <Price price={product.price} compareAt={product.compare_at_price}
@@ -121,17 +121,18 @@ function ProductView({ product }: { product: ProductDetail }) {
             <section key={g.id} id={`g-${g.id}`} className={cx("mt-5 rounded-card bg-card p-4",
               invalid && "ring-2 ring-danger")}>
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="font-semibold">{g.name}</h2>
+                <h2 id={`gl-${g.id}`} className="font-semibold">{g.name}</h2>
                 <span className={cx("rounded-full px-2 py-0.5 text-[12px]",
                   g.min_select ? "bg-accent/10 text-accent" : "bg-bg2 text-hint")}>
                   {g.min_select ? t("required") : t("choose_up_to", { n: g.max_select })}
                 </span>
               </div>
-              <ul role={g.selection_type === "single" ? "radiogroup" : "group"}>
+              <div role={g.selection_type === "single" ? "radiogroup" : "group"}
+                aria-labelledby={`gl-${g.id}`}>
                 {g.options.map((o) => {
                   const on = sel[g.id]?.includes(o.id) ?? false;
                   return (
-                    <li key={o.id}>
+                    <div key={o.id}>
                       <button type="button" disabled={!o.is_available}
                         role={g.selection_type === "single" ? "radio" : "checkbox"}
                         aria-checked={on} onClick={() => toggle(g, o.id)}
@@ -146,10 +147,10 @@ function ProductView({ product }: { product: ProductDetail }) {
                         {o.price_delta > 0 && <span className="tabular text-[14px] text-hint">
                           +{money(o.price_delta)}</span>}
                       </button>
-                    </li>
+                    </div>
                   );
                 })}
-              </ul>
+              </div>
             </section>
           );
         })}

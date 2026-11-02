@@ -1,18 +1,27 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { ApiError } from "./api";
 import { Button, Empty, Spinner } from "./components/ui";
 import { translate } from "./i18n";
-import { CartPage } from "./pages/Cart";
-import { CategoriesPage, CategoryProductsPage } from "./pages/Categories";
-import { CheckoutPage } from "./pages/Checkout";
 import { HomePage, SearchPage } from "./pages/Home";
-import { OrderDetailPage, OrderPlacedPage, OrdersPage } from "./pages/Orders";
-import { ProductDetailPage } from "./pages/ProductDetail";
-import { ProfilePage, SupportPage } from "./pages/Profile";
 import { SessionProvider, useBoot } from "./session";
 import { tg } from "./telegram";
+
+// Home is in the entry chunk; every other page loads on first visit (smaller startup JS).
+const page = <K extends string>(load: () => Promise<Record<K, React.ComponentType>>, name: K) =>
+  lazy(() => load().then((m) => ({ default: m[name] })));
+const CartPage = page(() => import("./pages/Cart"), "CartPage");
+const CategoriesPage = page(() => import("./pages/Categories"), "CategoriesPage");
+const CategoryProductsPage = page(() => import("./pages/Categories"), "CategoryProductsPage");
+const CheckoutPage = page(() => import("./pages/Checkout"), "CheckoutPage");
+const OrdersPage = page(() => import("./pages/Orders"), "OrdersPage");
+const OrderDetailPage = page(() => import("./pages/Orders"), "OrderDetailPage");
+const OrderPlacedPage = page(() => import("./pages/Orders"), "OrderPlacedPage");
+const ProductDetailPage = page(() => import("./pages/ProductDetail"), "ProductDetailPage");
+const ProfilePage = page(() => import("./pages/Profile"), "ProfilePage");
+const SupportPage = page(() => import("./pages/Profile"), "SupportPage");
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +54,8 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <SessionProvider api={boot.api} business={boot.business} customer={boot.customer}>
         <BrowserRouter>
+          <Suspense fallback={<div className="grid min-h-dvh place-items-center text-accent">
+            <Spinner className="size-8" /></div>}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/search" element={<SearchPage />} />
@@ -60,6 +71,7 @@ export function App() {
             <Route path="/support" element={<SupportPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </SessionProvider>
     </QueryClientProvider>

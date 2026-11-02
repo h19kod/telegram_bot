@@ -52,7 +52,7 @@ export function Shell() {
                   isActive ? "bg-accent/10 font-semibold text-accent" : "text-fg/80 hover:bg-bg2")}>
                 <span aria-hidden>{n.icon}</span>{t(n.key)}
                 {n.to === "/orders" && live.pending > 0 && (
-                  <span className="tabular ms-auto rounded-full bg-accent px-1.5 text-[11px] font-bold text-white">{live.pending}</span>
+                  <span className="tabular ms-auto rounded-full bg-accent px-1.5 text-[11px] font-bold text-on-accent">{live.pending}</span>
                 )}
               </NavLink>
             ))}

@@ -14,7 +14,7 @@ export function Button({ variant = "primary", size = "md", className, ...p }:
     "inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition",
     "disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
     size === "sm" ? "px-2.5 py-1.5 text-[13px]" : "px-4 py-2.5 text-[14px]",
-    variant === "primary" && "bg-accent text-white hover:bg-accent/90",
+    variant === "primary" && "bg-accent text-on-accent hover:bg-accent/90",
     variant === "secondary" && "border border-line bg-card hover:bg-bg2",
     variant === "ghost" && "hover:bg-bg2",
     variant === "danger" && "bg-danger/10 text-danger hover:bg-danger/15",
@@ -164,8 +164,8 @@ export function UiProvider({ children }: { children: ReactNode }) {
       {children}
       <div aria-live="polite" className="pointer-events-none fixed bottom-4 start-4 z-[100] flex flex-col gap-2">
         {toasts.map((x) => (
-          <div key={x.id} className={cx("pointer-events-auto rounded-lg px-4 py-3 text-[14px] font-medium text-white shadow-lg",
-            x.tone === "error" ? "bg-danger" : "bg-fg text-bg")}>{x.msg}</div>
+          <div key={x.id} className={cx("pointer-events-auto rounded-lg px-4 py-3 text-[14px] font-medium shadow-lg",
+            x.tone === "error" ? "bg-danger text-on-accent" : "bg-fg text-bg")}>{x.msg}</div>
         ))}
       </div>
       <Modal open={Boolean(dlg)} onClose={() => close(false)} title={dlg?.title ?? ""}

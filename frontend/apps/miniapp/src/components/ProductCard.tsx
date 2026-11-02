@@ -45,7 +45,7 @@ export function ProductCard({ product }: { product: Product }) {
             !product.is_available && "opacity-40 grayscale")} />
         {product.discount_percent ? (
           <span className="absolute start-2 top-2 rounded-full bg-danger px-2 py-0.5
-            text-[11px] font-bold text-white">-{product.discount_percent}%</span>
+            text-[11px] font-bold text-on-danger">-{product.discount_percent}%</span>
         ) : null}
         {!product.is_available && (
           <span className="absolute inset-x-2 bottom-2 rounded-lg bg-black/60 py-1 text-center
@@ -53,7 +53,7 @@ export function ProductCard({ product }: { product: Product }) {
         )}
       </div>
       <div className="flex flex-1 flex-col gap-1 p-3">
-        <h3 className="line-clamp-2 text-[14px] leading-snug font-semibold">{product.name}</h3>
+        <h2 className="line-clamp-2 text-[14px] leading-snug font-semibold">{product.name}</h2>
         <div className="mt-auto flex items-center justify-between gap-2 pt-1">
           <Price price={product.price} compareAt={product.compare_at_price}
             className="text-[14px]" />
