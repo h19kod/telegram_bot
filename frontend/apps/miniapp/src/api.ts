@@ -1,199 +1,37 @@
 /** Storefront API client. Every price shown comes from these responses — never computed
  * from user input. */
-import { ApiError, newIdempotencyKey, parseResponse, type RequestOptions } from "@sop/shared";
+import {
+  ApiError,
+  type components,
+  newIdempotencyKey,
+  parseResponse,
+  type RequestOptions,
+} from "@sop/shared";
 
 const BASE = import.meta.env.VITE_API_BASE ?? "";
 
-export interface BusinessInfo {
-  id: string;
-  slug: string;
-  name: string;
-  description: string;
-  business_type: string;
-  logo: string | null;
-  cover: string | null;
-  phone: string;
-  currency: string;
-  is_open: boolean;
-  is_active: boolean;
-  accepts_delivery: boolean;
-  accepts_pickup: boolean;
-  min_order_amount: number;
-  payment_methods: string[];
-  allow_order_notes: boolean;
-  customer_cancel_window_min: number;
-  welcome_message: string;
-  address: string;
-  hours: { weekday: number; opens_at: string; closes_at: string }[];
-}
-
-export interface Customer {
-  id: string;
-  first_name: string;
-  full_name: string;
-  phone: string;
-  language: "ar" | "en";
-  orders_count: number;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  image: string | null;
-  parent: string | null;
-}
-
-export interface Option {
-  id: string;
-  name: string;
-  price_delta: number;
-  is_available: boolean;
-  is_default: boolean;
-}
-
-export interface OptionGroup {
-  id: string;
-  name: string;
-  selection_type: "single" | "multiple";
-  is_required: boolean;
-  min_select: number;
-  max_select: number;
-  options: Option[];
-}
-
-export interface ProductImage {
-  url: string | null;
-  thumbnail: string | null;
-  width: number;
-  height: number;
-}
-
-export interface Product {
-  id: string;
-  category: string;
-  category_name: string;
-  name: string;
-  description: string;
-  price: number;
-  compare_at_price: number | null;
-  discount_percent: number | null;
-  is_available: boolean;
-  tags: string[];
-  prep_time_min: number | null;
-  images: ProductImage[];
-  option_groups?: OptionGroup[];
-  has_options?: boolean;
-}
-
-export interface Page<T> {
-  results: T[];
-  next: string | null;
-  previous: string | null;
-}
-
-export interface CartLine {
-  id: string;
-  product_id: string;
-  name: string;
-  image: string | null;
-  options: { id: string; name: string; price_delta: number }[];
-  quantity: number;
-  note: string;
-  unit_price: number;
-  line_total: number;
-  available: boolean;
-  warning: string;
-}
-
-export interface Cart {
-  lines: CartLine[];
-  subtotal: number;
-  item_count: number;
-  has_problems: boolean;
-  currency: string;
-}
-
-export interface Zone {
-  id: string;
-  name: string;
-  areas: string[];
-  fee: number;
-  min_order: number | null;
-  free_delivery_threshold: number | null;
-  eta_min: number | null;
-  eta_max: number | null;
-}
-
-export interface CheckoutBody {
-  fulfilment: "delivery" | "pickup";
-  customer_name: string;
-  customer_phone: string;
-  zone_id?: string | null;
-  address_area?: string;
-  address_street?: string;
-  address_landmark?: string;
-  address_building?: string;
-  notes?: string;
-  coupon_code?: string;
-}
-
-export interface Quote {
-  subtotal: number;
-  delivery_fee: number;
-  discount_total: number;
-  total: number;
-  currency: string;
-  payment_method: string;
-  coupon: { code: string; discount: number } | null;
-  zone: { id: string; name_ar: string; name_en: string; eta_min: number | null;
-    eta_max: number | null } | null;
-}
-
-export type OrderStatus = "pending" | "confirmed" | "preparing" | "ready" |
-  "out_for_delivery" | "delivered" | "cancelled" | "rejected";
-
-export interface Order {
-  id: string;
-  number: number;
-  status: OrderStatus;
-  fulfilment: "delivery" | "pickup";
-  currency: string;
-  subtotal: number;
-  delivery_fee: number;
-  discount_total: number;
-  total: number;
-  payment_method: string;
-  placed_at: string;
-  customer_name: string;
-  customer_phone: string;
-  zone_name_snapshot: string;
-  address_area: string;
-  address_street: string;
-  address_landmark: string;
-  notes: string;
-  cancel_reason: string;
-  items: { name: string; quantity: number; unit_price: number; line_total: number;
-    note: string; options: string[]; product_id: string | null }[];
-  can_cancel: boolean;
-  timeline: { status: OrderStatus; at: string }[];
-}
-
-export interface Address {
-  id: string;
-  label: "home" | "work" | "other";
-  zone: string | null;
-  area: string;
-  street: string;
-  landmark: string;
-  building: string;
-  is_default: boolean;
-}
-
-interface SessionResponse {
-  token: string;
-  customer: Customer;
-  business: BusinessInfo;
-}
+// Response/request shapes come from the backend OpenAPI schema (`make schema`), so they cannot
+// drift from what the server sends.
+type S = components["schemas"];
+export type BusinessInfo = S["StoreInfo"];
+export type Customer = S["StoreMe"];
+export type Category = S["StoreCategory"];
+export type Option = S["StoreOption"];
+export type OptionGroup = S["StoreOptionGroup"];
+export type ProductImage = S["StoreImage"];
+export type Product = S["StoreProductList"];
+export type ProductDetail = S["StoreProduct"];
+export type Page = S["ProductPage"];
+export type CartLine = S["CartLine"];
+export type Cart = S["CartResponse"];
+export type Zone = S["StoreZone"];
+export type CheckoutBody = S["CheckoutRequest"];
+export type Quote = S["QuoteResponse"];
+export type OrderStatus = S["OrderStatusEnum"];
+export type Order = S["StoreOrder"];
+export type Address = S["Address"];
+export type AddressBody = S["AddressRequest"];
+type SessionResponse = S["SessionResponse"];
 
 export class StoreApi {
   private token: string | null = null;
@@ -247,19 +85,19 @@ export class StoreApi {
     await this.refreshing;
   }
 
-  info = () => this.request<BusinessInfo>("");
+  info = () => this.request<BusinessInfo>("/");
   categories = () => this.request<Category[]>("/categories");
   products = (params: Record<string, string | undefined>, cursor?: string | null) => {
     if (cursor) {
       const u = new URL(cursor, location.origin);
-      return this.request<Page<Product>>(`/products${u.search}`);
+      return this.request<Page>(`/products${u.search}`);
     }
     const q = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) if (v) q.set(k, v);
     const qs = q.toString();
-    return this.request<Page<Product>>(`/products${qs ? `?${qs}` : ""}`);
+    return this.request<Page>(`/products${qs ? `?${qs}` : ""}`);
   };
-  product = (id: string) => this.request<Product>(`/products/${id}`);
+  product = (id: string) => this.request<ProductDetail>(`/products/${id}`);
   zones = () => this.request<Zone[]>("/delivery-zones");
 
   cart = () => this.request<Cart>("/cart");
@@ -285,7 +123,7 @@ export class StoreApi {
   updateMe = (body: Partial<Pick<Customer, "full_name" | "phone" | "language">>) =>
     this.request<Customer>("/me", { method: "PATCH", body });
   addresses = () => this.request<Address[]>("/me/addresses");
-  addAddress = (body: Omit<Address, "id">) =>
+  addAddress = (body: AddressBody) =>
     this.request<Address>("/me/addresses", { method: "POST", body });
   deleteAddress = (id: string) =>
     this.request<void>(`/me/addresses/${id}`, { method: "DELETE" });

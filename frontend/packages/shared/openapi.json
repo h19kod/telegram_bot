@@ -10692,7 +10692,16 @@
                     }
                 },
                 "required": [
-                    "id"
+                    "area",
+                    "building",
+                    "id",
+                    "is_default",
+                    "label",
+                    "landmark",
+                    "latitude",
+                    "longitude",
+                    "street",
+                    "zone"
                 ]
             },
             "AddressRequest": {
@@ -10787,8 +10796,13 @@
                 "required": [
                     "action",
                     "actor",
+                    "business",
+                    "changes",
                     "created_at",
-                    "id"
+                    "id",
+                    "ip",
+                    "target_id",
+                    "target_type"
                 ]
             },
             "AvailabilityEnum": {
@@ -10892,11 +10906,21 @@
                     }
                 },
                 "required": [
+                    "accepts_delivery",
+                    "accepts_pickup",
+                    "address",
+                    "governorate",
                     "hours",
                     "id",
+                    "is_active",
                     "is_default",
                     "is_open_now",
-                    "name_ar"
+                    "is_temporarily_closed",
+                    "latitude",
+                    "longitude",
+                    "name_ar",
+                    "name_en",
+                    "phone"
                 ]
             },
             "BranchRequest": {
@@ -11034,14 +11058,22 @@
                     }
                 },
                 "required": [
+                    "business_type",
                     "cover",
                     "created_at",
                     "currency",
+                    "default_language",
+                    "description_ar",
+                    "description_en",
                     "id",
                     "logo",
                     "name_ar",
+                    "name_en",
+                    "phone",
                     "slug",
-                    "status"
+                    "status",
+                    "timezone",
+                    "whatsapp"
                 ]
             },
             "BusinessCreateBusinessTypeEnum": {
@@ -11297,8 +11329,12 @@
                     "created_at",
                     "id",
                     "image",
+                    "is_active",
                     "name_ar",
-                    "products_count"
+                    "name_en",
+                    "parent",
+                    "products_count",
+                    "sort_order"
                 ]
             },
             "CategoryRequest": {
@@ -11447,7 +11483,8 @@
                     "customer_name",
                     "id",
                     "last_activity_at",
-                    "messages"
+                    "messages",
+                    "status"
                 ]
             },
             "ConversationRequest": {
@@ -11546,8 +11583,15 @@
                 "required": [
                     "code",
                     "created_at",
+                    "ends_at",
                     "id",
+                    "is_active",
                     "kind",
+                    "max_discount",
+                    "min_order",
+                    "per_customer_limit",
+                    "starts_at",
+                    "usage_limit",
                     "used_count",
                     "value"
                 ]
@@ -11719,10 +11763,21 @@
                     }
                 },
                 "required": [
+                    "blocked_reason",
                     "created_at",
                     "display_name",
+                    "first_name",
+                    "first_order_at",
+                    "full_name",
                     "id",
-                    "phone"
+                    "is_blocked",
+                    "language",
+                    "last_name",
+                    "last_order_at",
+                    "orders_count",
+                    "phone",
+                    "telegram_username",
+                    "total_spent"
                 ]
             },
             "CustomerRequest": {
@@ -11868,8 +11923,19 @@
                     }
                 },
                 "required": [
+                    "areas",
+                    "branch",
+                    "eta_max",
+                    "eta_min",
+                    "fee",
+                    "free_delivery_threshold",
+                    "governorate",
                     "id",
-                    "name_ar"
+                    "is_active",
+                    "min_order",
+                    "name_ar",
+                    "name_en",
+                    "sort_order"
                 ]
             },
             "DeliveryZoneRequest": {
@@ -11972,7 +12038,11 @@
                     }
                 },
                 "required": [
+                    "default_value",
+                    "description",
+                    "is_metered",
                     "key",
+                    "reset_period",
                     "value_type"
                 ]
             },
@@ -12106,8 +12176,10 @@
                     "accept_url",
                     "accepted_at",
                     "created_at",
+                    "email",
                     "expires_at",
                     "id",
+                    "phone",
                     "role"
                 ]
             },
@@ -12179,8 +12251,10 @@
                 },
                 "required": [
                     "answer_ar",
+                    "answer_en",
                     "created_at",
                     "id",
+                    "is_active",
                     "topic"
                 ]
             },
@@ -12262,11 +12336,13 @@
                     "email": {
                         "type": "string",
                         "format": "email",
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true
                     },
                     "phone": {
                         "type": "string",
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true
                     },
                     "full_name": {
                         "type": "string",
@@ -12425,7 +12501,12 @@
                 },
                 "required": [
                     "id",
-                    "name_ar"
+                    "is_available",
+                    "is_default",
+                    "name_ar",
+                    "name_en",
+                    "price_delta",
+                    "sort_order"
                 ]
             },
             "OptionGroup": {
@@ -12475,8 +12556,14 @@
                 },
                 "required": [
                     "id",
+                    "is_required",
+                    "max_select",
+                    "min_select",
                     "name_ar",
-                    "options"
+                    "name_en",
+                    "options",
+                    "selection_type",
+                    "sort_order"
                 ]
             },
             "OptionGroupRequest": {
@@ -12640,7 +12727,9 @@
                     },
                     "items_count": {
                         "type": "integer",
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true,
+                        "description": "List only; null in detail"
                     },
                     "notes": {
                         "type": "string",
@@ -12652,6 +12741,7 @@
                             "type": "string"
                         },
                         "nullable": true,
+                        "description": "Delivery only; without customers.view_pii just {zone}",
                         "readOnly": true
                     },
                     "latitude": {
@@ -12707,7 +12797,7 @@
                     "allowed_actions": {
                         "type": "array",
                         "items": {
-                            "type": "string"
+                            "$ref": "#/components/schemas/OrderStatusEnum"
                         },
                         "readOnly": true
                     },
@@ -12719,22 +12809,37 @@
                 "required": [
                     "address",
                     "allowed_actions",
+                    "assigned_driver",
                     "branch",
+                    "cancel_reason",
+                    "cancelled_at",
                     "channel",
+                    "confirmed_at",
                     "currency",
                     "customer",
                     "customer_name",
                     "customer_phone",
+                    "delivered_at",
+                    "delivery_fee",
+                    "discount_total",
                     "events",
                     "fulfilment",
                     "id",
                     "items",
                     "items_count",
+                    "latitude",
+                    "longitude",
+                    "notes",
                     "number",
                     "payment_method",
+                    "payment_status",
                     "placed_at",
+                    "ready_at",
+                    "status",
                     "subtotal",
-                    "total"
+                    "total",
+                    "version",
+                    "zone_name_snapshot"
                 ]
             },
             "OrderDetailRequest": {
@@ -12908,6 +13013,8 @@
                 "required": [
                     "actor",
                     "created_at",
+                    "from_status",
+                    "reason",
                     "source",
                     "to_status"
                 ]
@@ -12991,8 +13098,11 @@
                 "required": [
                     "id",
                     "line_total",
+                    "note",
                     "options",
+                    "product",
                     "product_name_ar",
+                    "product_name_en",
                     "quantity",
                     "unit_price"
                 ]
@@ -13025,7 +13135,9 @@
                 },
                 "required": [
                     "group_name_ar",
+                    "group_name_en",
                     "option_name_ar",
+                    "option_name_en",
                     "price_delta"
                 ]
             },
@@ -13199,23 +13311,32 @@
                     },
                     "items_count": {
                         "type": "integer",
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true,
+                        "description": "List only; null in detail"
                     }
                 },
                 "required": [
+                    "assigned_driver",
                     "channel",
                     "currency",
                     "customer",
                     "customer_name",
                     "customer_phone",
+                    "delivery_fee",
+                    "discount_total",
                     "fulfilment",
                     "id",
                     "items_count",
                     "number",
                     "payment_method",
+                    "payment_status",
                     "placed_at",
+                    "status",
                     "subtotal",
-                    "total"
+                    "total",
+                    "version",
+                    "zone_name_snapshot"
                 ]
             },
             "OrderStatusEnum": {
@@ -13312,6 +13433,8 @@
                 "type": "object",
                 "required": [
                     "count",
+                    "next",
+                    "previous",
                     "results"
                 ],
                 "properties": {
@@ -13343,6 +13466,8 @@
                 "type": "object",
                 "required": [
                     "count",
+                    "next",
+                    "previous",
                     "results"
                 ],
                 "properties": {
@@ -13374,6 +13499,8 @@
                 "type": "object",
                 "required": [
                     "count",
+                    "next",
+                    "previous",
                     "results"
                 ],
                 "properties": {
@@ -13405,6 +13532,8 @@
                 "type": "object",
                 "required": [
                     "count",
+                    "next",
+                    "previous",
                     "results"
                 ],
                 "properties": {
@@ -13436,6 +13565,8 @@
                 "type": "object",
                 "required": [
                     "count",
+                    "next",
+                    "previous",
                     "results"
                 ],
                 "properties": {
@@ -13467,6 +13598,8 @@
                 "type": "object",
                 "required": [
                     "count",
+                    "next",
+                    "previous",
                     "results"
                 ],
                 "properties": {
@@ -13498,6 +13631,8 @@
                 "type": "object",
                 "required": [
                     "count",
+                    "next",
+                    "previous",
                     "results"
                 ],
                 "properties": {
@@ -14160,8 +14295,7 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/PermissionsEnum"
-                        },
-                        "writeOnly": true
+                        }
                     }
                 }
             },
@@ -14294,7 +14428,9 @@
                     "currency",
                     "id",
                     "method",
-                    "paid_at"
+                    "months",
+                    "paid_at",
+                    "reference"
                 ]
             },
             "PaymentMethodsEnum": {
@@ -14454,11 +14590,17 @@
                 },
                 "required": [
                     "code",
+                    "currency",
                     "entitlements",
                     "id",
+                    "is_active",
                     "is_default",
+                    "is_public",
+                    "monthly_price",
                     "name_ar",
-                    "name_en"
+                    "name_en",
+                    "sort_order",
+                    "trial_days"
                 ]
             },
             "PlanRequest": {
@@ -14812,13 +14954,24 @@
                     }
                 },
                 "required": [
+                    "availability",
                     "category",
+                    "compare_at_price",
                     "created_at",
+                    "description_ar",
+                    "description_en",
                     "id",
                     "images",
                     "name_ar",
+                    "name_en",
                     "option_groups",
+                    "prep_time_min",
                     "price",
+                    "sku",
+                    "sort_order",
+                    "stock_quantity",
+                    "tags",
+                    "track_stock",
                     "updated_at"
                 ]
             },
@@ -15281,6 +15434,12 @@
                         "type": "boolean",
                         "readOnly": true
                     },
+                    "permissions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PermissionsEnum"
+                        }
+                    },
                     "members_count": {
                         "type": "integer",
                         "readOnly": true
@@ -15291,7 +15450,8 @@
                     "is_owner",
                     "is_system",
                     "members_count",
-                    "name"
+                    "name",
+                    "permissions"
                 ]
             },
             "RoleRequest": {
@@ -15306,8 +15466,7 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/PermissionsEnum"
-                        },
-                        "writeOnly": true
+                        }
                     }
                 },
                 "required": [
@@ -15439,7 +15598,16 @@
                     }
                 },
                 "required": [
-                    "payment_methods"
+                    "ai_enabled",
+                    "ai_persona_note",
+                    "allow_order_notes",
+                    "auto_reject_after_min",
+                    "customer_cancel_window_min",
+                    "min_order_amount",
+                    "notification_chat_ids",
+                    "payment_methods",
+                    "welcome_message_ar",
+                    "welcome_message_en"
                 ]
             },
             "SourceEnum": {
@@ -15493,7 +15661,37 @@
                     "id",
                     "image",
                     "name",
-                    "name_ar"
+                    "name_ar",
+                    "name_en",
+                    "parent",
+                    "sort_order"
+                ]
+            },
+            "StoreImage": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "thumbnail": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "width": {
+                        "type": "integer"
+                    },
+                    "height": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "height",
+                    "thumbnail",
+                    "url",
+                    "width"
                 ]
             },
             "StoreInfo": {
@@ -15519,7 +15717,7 @@
                         "type": "string"
                     },
                     "business_type": {
-                        "type": "string"
+                        "$ref": "#/components/schemas/BusinessTypeEnum"
                     },
                     "logo": {
                         "type": "string",
@@ -15538,7 +15736,7 @@
                         "type": "string"
                     },
                     "default_language": {
-                        "type": "string"
+                        "$ref": "#/components/schemas/LanguageEnum"
                     },
                     "is_open": {
                         "type": "boolean"
@@ -15628,7 +15826,7 @@
                         "type": "string"
                     },
                     "language": {
-                        "type": "string"
+                        "$ref": "#/components/schemas/LanguageEnum"
                     },
                     "orders_count": {
                         "type": "integer"
@@ -15678,8 +15876,12 @@
                 },
                 "required": [
                     "id",
+                    "is_available",
+                    "is_default",
                     "name",
-                    "name_ar"
+                    "name_ar",
+                    "name_en",
+                    "price_delta"
                 ]
             },
             "StoreOptionGroup": {
@@ -15726,10 +15928,14 @@
                 },
                 "required": [
                     "id",
+                    "is_required",
+                    "max_select",
                     "min_select",
                     "name",
                     "name_ar",
-                    "options"
+                    "name_en",
+                    "options",
+                    "selection_type"
                 ]
             },
             "StoreOrder": {
@@ -15825,8 +16031,7 @@
                     "items": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "additionalProperties": {}
+                            "$ref": "#/components/schemas/StoreOrderItem"
                         },
                         "readOnly": true
                     },
@@ -15837,27 +16042,75 @@
                     "timeline": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "additionalProperties": {}
+                            "$ref": "#/components/schemas/StoreTimelineEvent"
                         },
                         "readOnly": true
                     }
                 },
                 "required": [
+                    "address_area",
+                    "address_landmark",
+                    "address_street",
                     "can_cancel",
+                    "cancel_reason",
                     "channel",
                     "currency",
                     "customer_name",
                     "customer_phone",
+                    "delivery_fee",
+                    "discount_total",
                     "fulfilment",
                     "id",
                     "items",
+                    "notes",
                     "number",
                     "payment_method",
                     "placed_at",
+                    "status",
                     "subtotal",
                     "timeline",
-                    "total"
+                    "total",
+                    "zone_name_snapshot"
+                ]
+            },
+            "StoreOrderItem": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "quantity": {
+                        "type": "integer"
+                    },
+                    "unit_price": {
+                        "type": "integer"
+                    },
+                    "line_total": {
+                        "type": "integer"
+                    },
+                    "note": {
+                        "type": "string"
+                    },
+                    "product_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "options": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "line_total",
+                    "name",
+                    "note",
+                    "options",
+                    "product_id",
+                    "quantity",
+                    "unit_price"
                 ]
             },
             "StoreProduct": {
@@ -15929,8 +16182,7 @@
                     "images": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "additionalProperties": {}
+                            "$ref": "#/components/schemas/StoreImage"
                         },
                         "readOnly": true
                     },
@@ -15945,6 +16197,7 @@
                 "required": [
                     "category",
                     "category_name",
+                    "compare_at_price",
                     "description",
                     "discount_percent",
                     "id",
@@ -15952,8 +16205,11 @@
                     "is_available",
                     "name",
                     "name_ar",
+                    "name_en",
                     "option_groups",
-                    "price"
+                    "prep_time_min",
+                    "price",
+                    "tags"
                 ]
             },
             "StoreProductList": {
@@ -16025,8 +16281,7 @@
                     "images": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "additionalProperties": {}
+                            "$ref": "#/components/schemas/StoreImage"
                         },
                         "readOnly": true
                     },
@@ -16038,6 +16293,7 @@
                 "required": [
                     "category",
                     "category_name",
+                    "compare_at_price",
                     "description",
                     "discount_percent",
                     "has_options",
@@ -16046,7 +16302,10 @@
                     "is_available",
                     "name",
                     "name_ar",
-                    "price"
+                    "name_en",
+                    "prep_time_min",
+                    "price",
+                    "tags"
                 ]
             },
             "StoreSupportMessageRequest": {
@@ -16060,6 +16319,22 @@
                 },
                 "required": [
                     "message"
+                ]
+            },
+            "StoreTimelineEvent": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "$ref": "#/components/schemas/OrderStatusEnum"
+                    },
+                    "at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "at",
+                    "status"
                 ]
             },
             "StoreZone": {
@@ -16123,9 +16398,16 @@
                     }
                 },
                 "required": [
+                    "areas",
+                    "eta_max",
+                    "eta_min",
+                    "fee",
+                    "free_delivery_threshold",
                     "id",
+                    "min_order",
                     "name",
-                    "name_ar"
+                    "name_ar",
+                    "name_en"
                 ]
             },
             "SubscriptionOverview": {
@@ -16285,6 +16567,7 @@
                     "created_at",
                     "id",
                     "messages",
+                    "priority",
                     "status",
                     "subject",
                     "updated_at"
@@ -16400,7 +16683,10 @@
                 "required": [
                     "bot_telegram_id",
                     "created_at",
-                    "username"
+                    "is_active",
+                    "last_error",
+                    "username",
+                    "webhook_status"
                 ]
             },
             "TelegramTestResult": {
@@ -16552,9 +16838,11 @@
                 "required": [
                     "date_joined",
                     "email",
+                    "full_name",
                     "has_telegram",
                     "id",
                     "is_platform_admin",
+                    "language",
                     "phone",
                     "totp_enabled"
                 ]

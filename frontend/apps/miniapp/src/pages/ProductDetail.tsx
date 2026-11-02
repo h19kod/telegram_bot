@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import type { OptionGroup, Product } from "../api";
+import type { OptionGroup, ProductDetail } from "../api";
 import { ActionBar, Page } from "../components/Layout";
 import { Price, ProductImage } from "../components/ProductCard";
 import { Button, cx, ErrorState, Input, Skeleton, Stepper } from "../components/ui";
@@ -11,9 +11,9 @@ import { useMainButton } from "../hooks/telegram";
 import { useSession } from "../session";
 import { haptic } from "../telegram";
 
-function defaults(p: Product): Record<string, string[]> {
+function defaults(p: ProductDetail): Record<string, string[]> {
   const out: Record<string, string[]> = {};
-  for (const g of p.option_groups ?? []) {
+  for (const g of p.option_groups) {
     out[g.id] = g.options.filter((o) => o.is_default && o.is_available).slice(0, g.max_select)
       .map((o) => o.id);
   }
@@ -33,7 +33,7 @@ export function ProductDetailPage() {
   return <ProductView product={q.data} />;
 }
 
-function ProductView({ product }: { product: Product }) {
+function ProductView({ product }: { product: ProductDetail }) {
   const { t, money } = useSession();
   const navigate = useNavigate();
   const { add } = useCartMutations();
@@ -42,7 +42,7 @@ function ProductView({ product }: { product: Product }) {
   const [note, setNote] = useState("");
   const [imgIdx, setImgIdx] = useState(0);
   const [showErrors, setShowErrors] = useState(false);
-  const groups = product.option_groups ?? [];
+  const groups = product.option_groups;
 
   const missing = groups.filter((g) => (sel[g.id]?.length ?? 0) < g.min_select);
   // Display-only estimate; the cart total shown afterwards always comes from the server.

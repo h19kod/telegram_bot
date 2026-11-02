@@ -173,8 +173,26 @@ def test_storefront_responses_match_schema(api):
 
 
 def test_dashboard_responses_match_schema(api):
+    import uuid as _uuid
+
+    from apps.orders.services import cart as cart_svc
+    from apps.orders.services.checkout import CheckoutInput, place_order
+    from tests.factories import branch_of, make_customer
+
     b = make_business()
-    make_product(b)
+    p = make_product(b)
+    customer = make_customer(b)
+    cart_svc.add_item(customer, branch_of(b), p.id, [], 1)
+    order, _ = place_order(
+        customer,
+        branch_of(b),
+        CheckoutInput(
+            fulfilment="pickup",
+            customer_name="Ali",
+            customer_phone="07701234567",
+            idempotency_key=_uuid.uuid4(),
+        ),
+    )
     client = auth(api, b.owner)
     base = f"/api/v1/b/{b.id}"
     for url in (
@@ -190,6 +208,18 @@ def test_dashboard_responses_match_schema(api):
         "/products",
         "/orders",
         "/customers",
+        f"/orders/{order.id}",
+        "/roles",
+        "/members",
+        "/categories",
+        "/delivery-zones",
+        "/branches",
+        "/settings",
+        "/coupons",
+        "/invitations",
+        "/knowledge",
+        "/ai/conversations",
+        "/support-tickets",
     ):
         conforms(client.get(f"{base}{url}"), "get")
     conforms(client.post("/api/v1/auth/telegram/link-code"), "post")

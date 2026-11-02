@@ -2033,16 +2033,16 @@ export interface components {
             /** @default home */
             label: components["schemas"]["LabelEnum"];
             /** Format: uuid */
-            zone?: string | null;
-            area?: string;
-            street?: string;
-            landmark?: string;
-            building?: string;
+            zone: string | null;
+            area: string;
+            street: string;
+            landmark: string;
+            building: string;
             /** Format: decimal */
-            latitude?: string | null;
+            latitude: string | null;
             /** Format: decimal */
-            longitude?: string | null;
-            is_default?: boolean;
+            longitude: string | null;
+            is_default: boolean;
         };
         AddressRequest: {
             /** @default home */
@@ -2064,12 +2064,12 @@ export interface components {
             readonly id: string;
             readonly actor: string;
             /** Format: uuid */
-            business?: string | null;
+            business: string | null;
             action: string;
-            target_type?: string;
-            target_id?: string;
-            changes?: unknown;
-            ip?: string | null;
+            target_type: string;
+            target_id: string;
+            changes: unknown;
+            ip: string | null;
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -2090,19 +2090,19 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             name_ar: string;
-            name_en?: string;
-            governorate?: string | null;
-            address?: string;
+            name_en: string;
+            governorate: string | null;
+            address: string;
             /** Format: decimal */
-            latitude?: string | null;
+            latitude: string | null;
             /** Format: decimal */
-            longitude?: string | null;
-            phone?: string;
+            longitude: string | null;
+            phone: string;
             readonly is_default: boolean;
-            is_active?: boolean;
-            is_temporarily_closed?: boolean;
-            accepts_delivery?: boolean;
-            accepts_pickup?: boolean;
+            is_active: boolean;
+            is_temporarily_closed: boolean;
+            accepts_delivery: boolean;
+            accepts_pickup: boolean;
             readonly hours: components["schemas"]["WorkingHours"][];
             readonly is_open_now: boolean;
         };
@@ -2126,19 +2126,19 @@ export interface components {
             readonly id: string;
             readonly slug: string;
             name_ar: string;
-            name_en?: string;
-            description_ar?: string;
-            description_en?: string;
-            business_type?: components["schemas"]["BusinessTypeEnum"];
+            name_en: string;
+            description_ar: string;
+            description_en: string;
+            business_type: components["schemas"]["BusinessTypeEnum"];
             /** Format: uri */
             readonly logo: string | null;
             /** Format: uri */
             readonly cover: string | null;
-            phone?: string;
-            whatsapp?: string;
+            phone: string;
+            whatsapp: string;
             readonly currency: components["schemas"]["CurrencyEnum"];
-            default_language?: components["schemas"]["LanguageEnum"];
-            timezone?: string;
+            default_language: components["schemas"]["LanguageEnum"];
+            timezone: string;
             readonly status: components["schemas"]["BusinessStatusEnum"];
             /** Format: date-time */
             readonly created_at: string;
@@ -2221,13 +2221,13 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             name_ar: string;
-            name_en?: string;
+            name_en: string;
             /** Format: uri */
             readonly image: string | null;
             /** Format: uuid */
-            parent?: string | null;
-            sort_order?: number;
-            is_active?: boolean;
+            parent: string | null;
+            sort_order: number;
+            is_active: boolean;
             readonly products_count: number;
             /** Format: date-time */
             readonly created_at: string;
@@ -2272,7 +2272,7 @@ export interface components {
             /** Format: uuid */
             customer: string;
             readonly customer_name: string;
-            status?: components["schemas"]["ConversationStatusEnum"];
+            status: components["schemas"]["ConversationStatusEnum"];
             /** Format: date-time */
             readonly last_activity_at: string;
             readonly messages: {
@@ -2299,17 +2299,17 @@ export interface components {
             /** @description Percent (1-100) or fixed amount in minor units */
             value: number;
             /** Format: int64 */
-            max_discount?: number | null;
+            max_discount: number | null;
             /** Format: int64 */
-            min_order?: number;
+            min_order: number;
             /** Format: date-time */
-            starts_at?: string | null;
+            starts_at: string | null;
             /** Format: date-time */
-            ends_at?: string | null;
-            usage_limit?: number | null;
-            per_customer_limit?: number | null;
+            ends_at: string | null;
+            usage_limit: number | null;
+            per_customer_limit: number | null;
             readonly used_count: number;
-            is_active?: boolean;
+            is_active: boolean;
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -2348,21 +2348,21 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly display_name: string;
-            full_name?: string;
-            first_name?: string;
-            last_name?: string;
-            telegram_username?: string;
+            full_name: string;
+            first_name: string;
+            last_name: string;
+            telegram_username: string;
             readonly phone: string;
-            language?: components["schemas"]["LanguageEnum"];
-            is_blocked?: boolean;
-            blocked_reason?: string;
-            orders_count?: number;
+            language: components["schemas"]["LanguageEnum"];
+            is_blocked: boolean;
+            blocked_reason: string;
+            orders_count: number;
             /** Format: int64 */
-            total_spent?: number;
+            total_spent: number;
             /** Format: date-time */
-            first_order_at?: string | null;
+            first_order_at: string | null;
             /** Format: date-time */
-            last_order_at?: string | null;
+            last_order_at: string | null;
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -2392,21 +2392,21 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             /** Format: uuid */
-            branch?: string;
+            branch: string;
             name_ar: string;
-            name_en?: string;
-            governorate?: string | null;
-            areas?: string[];
+            name_en: string;
+            governorate: string | null;
+            areas: string[];
             /** Format: int64 */
-            fee?: number;
+            fee: number;
             /** Format: int64 */
-            min_order?: number | null;
+            min_order: number | null;
             /** Format: int64 */
-            free_delivery_threshold?: number | null;
-            eta_min?: number | null;
-            eta_max?: number | null;
-            is_active?: boolean;
-            sort_order?: number;
+            free_delivery_threshold: number | null;
+            eta_min: number | null;
+            eta_max: number | null;
+            is_active: boolean;
+            sort_order: number;
         };
         DeliveryZoneRequest: {
             /** Format: uuid */
@@ -2429,10 +2429,10 @@ export interface components {
         Feature: {
             key: string;
             value_type: components["schemas"]["ValueTypeEnum"];
-            default_value?: unknown;
-            is_metered?: boolean;
-            reset_period?: components["schemas"]["ResetPeriodEnum"];
-            description?: string;
+            default_value: unknown;
+            is_metered: boolean;
+            reset_period: components["schemas"]["ResetPeriodEnum"];
+            description: string;
         };
         FeatureRequest: {
             key: string;
@@ -2460,8 +2460,8 @@ export interface components {
         Invitation: {
             /** Format: uuid */
             readonly id: string;
-            email?: string;
-            phone?: string;
+            email: string;
+            phone: string;
             /** Format: uuid */
             role: string;
             /** Format: date-time */
@@ -2489,8 +2489,8 @@ export interface components {
             readonly id: string;
             topic: string;
             answer_ar: string;
-            answer_en?: string;
-            is_active?: boolean;
+            answer_en: string;
+            is_active: boolean;
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -2522,8 +2522,8 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             /** Format: email */
-            readonly email: string;
-            readonly phone: string;
+            readonly email: string | null;
+            readonly phone: string | null;
             readonly full_name: string;
             /** Format: uuid */
             role: string;
@@ -2565,23 +2565,23 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             name_ar: string;
-            name_en?: string;
+            name_en: string;
             /** Format: int64 */
-            price_delta?: number;
-            is_available?: boolean;
-            is_default?: boolean;
-            sort_order?: number;
+            price_delta: number;
+            is_available: boolean;
+            is_default: boolean;
+            sort_order: number;
         };
         OptionGroup: {
             /** Format: uuid */
             readonly id: string;
             name_ar: string;
-            name_en?: string;
-            selection_type?: components["schemas"]["SelectionTypeEnum"];
-            is_required?: boolean;
-            min_select?: number;
-            max_select?: number;
-            sort_order?: number;
+            name_en: string;
+            selection_type: components["schemas"]["SelectionTypeEnum"];
+            is_required: boolean;
+            min_select: number;
+            max_select: number;
+            sort_order: number;
             readonly options: components["schemas"]["Option"][];
         };
         OptionGroupRequest: {
@@ -2606,51 +2606,53 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             number: number;
-            status?: components["schemas"]["OrderStatusEnum"];
-            version?: number;
+            status: components["schemas"]["OrderStatusEnum"];
+            version: number;
             fulfilment: components["schemas"]["FulfilmentEnum"];
             channel: components["schemas"]["ChannelEnum"];
             /** Format: uuid */
             customer: string;
             customer_name: string;
             readonly customer_phone: string;
-            zone_name_snapshot?: string;
+            zone_name_snapshot: string;
             currency: string;
             /** Format: int64 */
             subtotal: number;
             /** Format: int64 */
-            delivery_fee?: number;
+            delivery_fee: number;
             /** Format: int64 */
-            discount_total?: number;
+            discount_total: number;
             /** Format: int64 */
             total: number;
             payment_method: string;
-            payment_status?: components["schemas"]["PaymentStatusEnum"];
+            payment_status: components["schemas"]["PaymentStatusEnum"];
             /** Format: date-time */
             placed_at: string;
             /** Format: uuid */
-            assigned_driver?: string | null;
-            readonly items_count: number;
-            notes?: string;
+            assigned_driver: string | null;
+            /** @description List only; null in detail */
+            readonly items_count: number | null;
+            notes: string;
+            /** @description Delivery only; without customers.view_pii just {zone} */
             readonly address: {
                 [key: string]: string;
             } | null;
             /** Format: decimal */
-            latitude?: string | null;
+            latitude: string | null;
             /** Format: decimal */
-            longitude?: string | null;
-            cancel_reason?: string;
+            longitude: string | null;
+            cancel_reason: string;
             /** Format: date-time */
-            confirmed_at?: string | null;
+            confirmed_at: string | null;
             /** Format: date-time */
-            ready_at?: string | null;
+            ready_at: string | null;
             /** Format: date-time */
-            delivered_at?: string | null;
+            delivered_at: string | null;
             /** Format: date-time */
-            cancelled_at?: string | null;
+            cancelled_at: string | null;
             readonly items: components["schemas"]["OrderItem"][];
             readonly events: components["schemas"]["OrderEvent"][];
-            readonly allowed_actions: string[];
+            readonly allowed_actions: components["schemas"]["OrderStatusEnum"][];
             /** Format: uuid */
             branch: string;
         };
@@ -2697,10 +2699,10 @@ export interface components {
             branch: string;
         };
         OrderEvent: {
-            from_status?: string;
+            from_status: string;
             to_status: string;
             source: components["schemas"]["SourceEnum"];
-            reason?: string;
+            reason: string;
             readonly actor: string;
             /** Format: date-time */
             readonly created_at: string;
@@ -2715,9 +2717,9 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             /** Format: uuid */
-            product?: string | null;
+            product: string | null;
             product_name_ar: string;
-            product_name_en?: string;
+            product_name_en: string;
             /**
              * Format: int64
              * @description Base price + option deltas at order time
@@ -2726,14 +2728,14 @@ export interface components {
             quantity: number;
             /** Format: int64 */
             line_total: number;
-            note?: string;
+            note: string;
             readonly options: components["schemas"]["OrderItemOption"][];
         };
         OrderItemOption: {
             group_name_ar: string;
-            group_name_en?: string;
+            group_name_en: string;
             option_name_ar: string;
-            option_name_en?: string;
+            option_name_en: string;
             /** Format: int64 */
             price_delta: number;
         };
@@ -2764,31 +2766,32 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             number: number;
-            status?: components["schemas"]["OrderStatusEnum"];
-            version?: number;
+            status: components["schemas"]["OrderStatusEnum"];
+            version: number;
             fulfilment: components["schemas"]["FulfilmentEnum"];
             channel: components["schemas"]["ChannelEnum"];
             /** Format: uuid */
             customer: string;
             customer_name: string;
             readonly customer_phone: string;
-            zone_name_snapshot?: string;
+            zone_name_snapshot: string;
             currency: string;
             /** Format: int64 */
             subtotal: number;
             /** Format: int64 */
-            delivery_fee?: number;
+            delivery_fee: number;
             /** Format: int64 */
-            discount_total?: number;
+            discount_total: number;
             /** Format: int64 */
             total: number;
             payment_method: string;
-            payment_status?: components["schemas"]["PaymentStatusEnum"];
+            payment_status: components["schemas"]["PaymentStatusEnum"];
             /** Format: date-time */
             placed_at: string;
             /** Format: uuid */
-            assigned_driver?: string | null;
-            readonly items_count: number;
+            assigned_driver: string | null;
+            /** @description List only; null in detail */
+            readonly items_count: number | null;
         };
         /**
          * @description * `pending` - Pending
@@ -2830,12 +2833,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?page=4
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?page=2
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["Conversation"][];
         };
         PaginatedCustomerList: {
@@ -2845,12 +2848,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?page=4
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?page=2
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["Customer"][];
         };
         PaginatedOptionList: {
@@ -2860,12 +2863,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?page=4
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?page=2
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["Option"][];
         };
         PaginatedOrderListList: {
@@ -2875,12 +2878,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?page=4
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?page=2
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["OrderList"][];
         };
         PaginatedPlatformBusinessList: {
@@ -2890,12 +2893,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?page=4
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?page=2
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["PlatformBusiness"][];
         };
         PaginatedProductList: {
@@ -2905,12 +2908,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?page=4
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?page=2
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["Product"][];
         };
         PaginatedSupportTicketList: {
@@ -2920,12 +2923,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?page=4
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?page=2
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["SupportTicket"][];
         };
         PasswordChangeRequest: {
@@ -3134,8 +3137,8 @@ export interface components {
             amount: number;
             currency: components["schemas"]["CurrencyEnum"];
             method: components["schemas"]["MethodEnum"];
-            reference?: string;
-            months?: number;
+            reference: string;
+            months: number;
             /** Format: date-time */
             paid_at: string;
             /** Format: date-time */
@@ -3204,13 +3207,13 @@ export interface components {
             name_ar: string;
             name_en: string;
             /** Format: int64 */
-            monthly_price?: number;
-            currency?: components["schemas"]["CurrencyEnum"];
-            is_public?: boolean;
-            is_active?: boolean;
+            monthly_price: number;
+            currency: components["schemas"]["CurrencyEnum"];
+            is_public: boolean;
+            is_active: boolean;
             readonly is_default: boolean;
-            trial_days?: number;
-            sort_order?: number;
+            trial_days: number;
+            sort_order: number;
             readonly entitlements: {
                 [key: string]: unknown;
             };
@@ -3284,20 +3287,20 @@ export interface components {
             /** Format: uuid */
             category: string;
             name_ar: string;
-            name_en?: string;
-            description_ar?: string;
-            description_en?: string;
-            sku?: string;
+            name_en: string;
+            description_ar: string;
+            description_en: string;
+            sku: string;
             /** Format: int64 */
             price: number;
             /** Format: int64 */
-            compare_at_price?: number | null;
-            availability?: components["schemas"]["AvailabilityEnum"];
-            track_stock?: boolean;
-            stock_quantity?: number | null;
-            prep_time_min?: number | null;
-            tags?: string[];
-            sort_order?: number;
+            compare_at_price: number | null;
+            availability: components["schemas"]["AvailabilityEnum"];
+            track_stock: boolean;
+            stock_quantity: number | null;
+            prep_time_min: number | null;
+            tags: string[];
+            sort_order: number;
             readonly images: components["schemas"]["ProductImage"][];
             readonly option_groups: components["schemas"]["OptionGroup"][];
             /** Format: date-time */
@@ -3429,6 +3432,7 @@ export interface components {
             name: string;
             readonly is_owner: boolean;
             readonly is_system: boolean;
+            permissions: components["schemas"]["PermissionsEnum"][];
             readonly members_count: number;
         };
         RoleRequest: {
@@ -3461,16 +3465,16 @@ export interface components {
         };
         Settings: {
             /** Format: int64 */
-            min_order_amount?: number;
-            customer_cancel_window_min?: number;
-            auto_reject_after_min?: number | null;
-            allow_order_notes?: boolean;
+            min_order_amount: number;
+            customer_cancel_window_min: number;
+            auto_reject_after_min: number | null;
+            allow_order_notes: boolean;
             payment_methods: components["schemas"]["PaymentMethodsEnum"][];
-            ai_enabled?: boolean;
-            ai_persona_note?: string;
-            welcome_message_ar?: string;
-            welcome_message_en?: string;
-            notification_chat_ids?: number[];
+            ai_enabled: boolean;
+            ai_persona_note: string;
+            welcome_message_ar: string;
+            welcome_message_en: string;
+            notification_chat_ids: number[];
         };
         /**
          * @description * `dashboard` - Dashboard
@@ -3486,11 +3490,19 @@ export interface components {
             readonly id: string;
             readonly name: string;
             name_ar: string;
-            name_en?: string;
+            name_en: string;
             readonly image: string | null;
             /** Format: uuid */
-            parent?: string | null;
-            sort_order?: number;
+            parent: string | null;
+            sort_order: number;
+        };
+        StoreImage: {
+            /** Format: uri */
+            url: string | null;
+            /** Format: uri */
+            thumbnail: string | null;
+            width: number;
+            height: number;
         };
         StoreInfo: {
             /** Format: uuid */
@@ -3500,14 +3512,14 @@ export interface components {
             name_ar: string;
             name_en: string;
             description: string;
-            business_type: string;
+            business_type: components["schemas"]["BusinessTypeEnum"];
             /** Format: uri */
             logo: string | null;
             /** Format: uri */
             cover: string | null;
             phone: string;
             currency: string;
-            default_language: string;
+            default_language: components["schemas"]["LanguageEnum"];
             is_open: boolean;
             is_active: boolean;
             accepts_delivery: boolean;
@@ -3528,7 +3540,7 @@ export interface components {
             first_name: string;
             full_name: string;
             phone: string;
-            language: string;
+            language: components["schemas"]["LanguageEnum"];
             orders_count: number;
         };
         StoreOption: {
@@ -3536,38 +3548,38 @@ export interface components {
             readonly id: string;
             readonly name: string;
             name_ar: string;
-            name_en?: string;
+            name_en: string;
             /** Format: int64 */
-            price_delta?: number;
-            is_available?: boolean;
-            is_default?: boolean;
+            price_delta: number;
+            is_available: boolean;
+            is_default: boolean;
         };
         StoreOptionGroup: {
             /** Format: uuid */
             readonly id: string;
             readonly name: string;
             name_ar: string;
-            name_en?: string;
-            selection_type?: components["schemas"]["SelectionTypeEnum"];
-            is_required?: boolean;
+            name_en: string;
+            selection_type: components["schemas"]["SelectionTypeEnum"];
+            is_required: boolean;
             min_select: number;
-            max_select?: number;
+            max_select: number;
             readonly options: components["schemas"]["StoreOption"][];
         };
         StoreOrder: {
             /** Format: uuid */
             readonly id: string;
             number: number;
-            status?: components["schemas"]["OrderStatusEnum"];
+            status: components["schemas"]["OrderStatusEnum"];
             fulfilment: components["schemas"]["FulfilmentEnum"];
             channel: components["schemas"]["ChannelEnum"];
             currency: string;
             /** Format: int64 */
             subtotal: number;
             /** Format: int64 */
-            delivery_fee?: number;
+            delivery_fee: number;
             /** Format: int64 */
-            discount_total?: number;
+            discount_total: number;
             /** Format: int64 */
             total: number;
             payment_method: string;
@@ -3575,19 +3587,25 @@ export interface components {
             placed_at: string;
             customer_name: string;
             customer_phone: string;
-            zone_name_snapshot?: string;
-            address_area?: string;
-            address_street?: string;
-            address_landmark?: string;
-            notes?: string;
-            cancel_reason?: string;
-            readonly items: {
-                [key: string]: unknown;
-            }[];
+            zone_name_snapshot: string;
+            address_area: string;
+            address_street: string;
+            address_landmark: string;
+            notes: string;
+            cancel_reason: string;
+            readonly items: components["schemas"]["StoreOrderItem"][];
             readonly can_cancel: boolean;
-            readonly timeline: {
-                [key: string]: unknown;
-            }[];
+            readonly timeline: components["schemas"]["StoreTimelineEvent"][];
+        };
+        StoreOrderItem: {
+            name: string;
+            quantity: number;
+            unit_price: number;
+            line_total: number;
+            note: string;
+            /** Format: uuid */
+            product_id: string | null;
+            options: string[];
         };
         StoreProduct: {
             /** Format: uuid */
@@ -3597,19 +3615,17 @@ export interface components {
             readonly category_name: string;
             readonly name: string;
             name_ar: string;
-            name_en?: string;
+            name_en: string;
             readonly description: string;
             /** Format: int64 */
             price: number;
             /** Format: int64 */
-            compare_at_price?: number | null;
+            compare_at_price: number | null;
             readonly discount_percent: number | null;
             is_available: boolean;
-            tags?: string[];
-            prep_time_min?: number | null;
-            readonly images: {
-                [key: string]: unknown;
-            }[];
+            tags: string[];
+            prep_time_min: number | null;
+            readonly images: components["schemas"]["StoreImage"][];
             readonly option_groups: components["schemas"]["StoreOptionGroup"][];
         };
         StoreProductList: {
@@ -3620,39 +3636,42 @@ export interface components {
             readonly category_name: string;
             readonly name: string;
             name_ar: string;
-            name_en?: string;
+            name_en: string;
             readonly description: string;
             /** Format: int64 */
             price: number;
             /** Format: int64 */
-            compare_at_price?: number | null;
+            compare_at_price: number | null;
             readonly discount_percent: number | null;
             is_available: boolean;
-            tags?: string[];
-            prep_time_min?: number | null;
-            readonly images: {
-                [key: string]: unknown;
-            }[];
+            tags: string[];
+            prep_time_min: number | null;
+            readonly images: components["schemas"]["StoreImage"][];
             readonly has_options: boolean;
         };
         StoreSupportMessageRequest: {
             message: string;
+        };
+        StoreTimelineEvent: {
+            status: components["schemas"]["OrderStatusEnum"];
+            /** Format: date-time */
+            at: string;
         };
         StoreZone: {
             /** Format: uuid */
             readonly id: string;
             readonly name: string;
             name_ar: string;
-            name_en?: string;
-            areas?: string[];
+            name_en: string;
+            areas: string[];
             /** Format: int64 */
-            fee?: number;
+            fee: number;
             /** Format: int64 */
-            min_order?: number | null;
+            min_order: number | null;
             /** Format: int64 */
-            free_delivery_threshold?: number | null;
-            eta_min?: number | null;
-            eta_max?: number | null;
+            free_delivery_threshold: number | null;
+            eta_min: number | null;
+            eta_max: number | null;
         };
         SubscriptionOverview: {
             plans: components["schemas"]["PublicPlan"][];
@@ -3687,7 +3706,7 @@ export interface components {
             readonly id: string;
             subject: string;
             readonly status: components["schemas"]["SupportTicketStatusEnum"];
-            priority?: components["schemas"]["PriorityEnum"];
+            priority: components["schemas"]["PriorityEnum"];
             /** Format: uuid */
             readonly business: string;
             readonly business_name: string;
@@ -3725,9 +3744,9 @@ export interface components {
             username: string;
             /** Format: int64 */
             bot_telegram_id: number;
-            webhook_status?: components["schemas"]["WebhookStatusEnum"];
-            last_error?: string;
-            is_active?: boolean;
+            webhook_status: components["schemas"]["WebhookStatusEnum"];
+            last_error: string;
+            is_active: boolean;
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -3764,8 +3783,8 @@ export interface components {
             /** Format: email */
             readonly email: string | null;
             readonly phone: string | null;
-            full_name?: string;
-            language?: components["schemas"]["LanguageEnum"];
+            full_name: string;
+            language: components["schemas"]["LanguageEnum"];
             readonly is_platform_admin: boolean;
             readonly totp_enabled: boolean;
             readonly has_telegram: boolean;

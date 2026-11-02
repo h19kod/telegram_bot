@@ -56,3 +56,17 @@ def error_envelope(result: dict[str, Any], **_: Any) -> dict[str, Any]:
                     {"description": "Error", "content": {"application/json": {"schema": ref}}},
                 )
     return result
+
+
+def responses_fully_required(result: dict[str, Any], **_: Any) -> dict[str, Any]:
+    """DRF always serialises every readable field, so response objects have all their keys.
+
+    drf-spectacular marks fields with model defaults as optional, which would make every client
+    type `T | undefined`. Request components (`*Request`, split by COMPONENT_SPLIT_REQUEST) keep
+    their real optionality. tests/test_openapi.py checks real responses contain every key.
+    """
+    for name, component in result.get("components", {}).get("schemas", {}).items():
+        if name.endswith("Request") or "properties" not in component:
+            continue
+        component["required"] = sorted(component["properties"])
+    return result

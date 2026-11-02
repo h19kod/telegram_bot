@@ -4,16 +4,11 @@ import { useState } from "react";
 import { PageHeader } from "../components/Shell";
 import { Badge, Button, Card, cx, ErrorBox, errorMessage, Field, Input, Loading, Modal, Select,
   StatCard, Table, useUi } from "../components/ui";
-import { del, get, post, put, qs, type Paginated } from "../lib/api";
+import { del, get, post, put, qs, type Feature, type Paginated, type Plan,
+  type PlatformBusiness } from "../lib/api";
 import { useSession } from "../lib/session";
 
-interface PBiz { id: string; slug: string; name_ar: string; status: string; suspended_reason: string;
-  owner_email: string; plan: string | null; subscription_status: string | null; orders_count: number;
-  has_own_bot: boolean; created_at: string }
-interface Plan { id: string; code: string; name_ar: string; name_en: string; monthly_price: number;
-  currency: string; is_public: boolean; is_active: boolean; is_default: boolean; trial_days: number;
-  entitlements: Record<string, unknown> }
-interface Feature { key: string; value_type: "bool" | "int"; description: string }
+type PBiz = PlatformBusiness;
 
 const TABS = ["businesses", "plans", "stats", "health", "support"] as const;
 

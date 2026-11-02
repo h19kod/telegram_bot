@@ -2,9 +2,17 @@ from __future__ import annotations
 
 from typing import Any
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from apps.orders.models import Fulfilment, Order, OrderItem, OrderItemOption, OrderStatusEvent
+from apps.orders.models import (
+    Fulfilment,
+    Order,
+    OrderItem,
+    OrderItemOption,
+    OrderStatus,
+    OrderStatusEvent,
+)
 from apps.orders.services.cart import PricedCart
 from core.phone import mask_phone
 from core.serializers import current_lang
@@ -55,7 +63,9 @@ class OrderEventSerializer(serializers.ModelSerializer):
 
 class OrderListSerializer(serializers.ModelSerializer):
     customer_phone = serializers.SerializerMethodField()
-    items_count = serializers.IntegerField(read_only=True, default=None)
+    items_count = serializers.IntegerField(
+        read_only=True, default=None, allow_null=True, help_text="List only; null in detail"
+    )
 
     class Meta:
         model = Order
@@ -112,11 +122,21 @@ class OrderDetailSerializer(OrderListSerializer):
             "branch",
         ]
 
+    @extend_schema_field(
+        serializers.ListField(child=serializers.ChoiceField(choices=OrderStatus.choices))
+    )
     def get_allowed_actions(self, obj: Order) -> list[str]:
         from apps.orders.services.transitions import actions_for
 
         return actions_for(obj, self.context.get("membership"))
 
+    @extend_schema_field(
+        serializers.DictField(
+            child=serializers.CharField(),
+            allow_null=True,
+            help_text="Delivery only; without customers.view_pii just {zone}",
+        )
+    )
     def get_address(self, obj: Order) -> dict[str, str] | None:
         if obj.fulfilment != "delivery":
             return None

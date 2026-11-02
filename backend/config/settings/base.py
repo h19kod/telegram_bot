@@ -224,6 +224,7 @@ SPECTACULAR_SETTINGS = {
     "POSTPROCESSING_HOOKS": [
         "drf_spectacular.hooks.postprocess_schema_enums",
         "core.schema.error_envelope",
+        "core.schema.responses_fully_required",
     ],
     "ENUM_NAME_OVERRIDES": {
         "BusinessTypeEnum": "apps.businesses.models.BusinessType",

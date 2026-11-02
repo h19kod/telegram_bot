@@ -4,19 +4,42 @@ from __future__ import annotations
 
 from typing import Any
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.businesses.models import Branch, Business
 from apps.businesses.services import is_open
 from apps.categories.models import Category
 from apps.delivery.models import DeliveryZone
-from apps.orders.models import Order
+from apps.orders.models import Order, OrderStatus
 from apps.products.models import Option, OptionGroup, Product
 from core.serializers import LocalizedField
 
 
 def _url(f: Any) -> str | None:
     return f.url if f else None
+
+
+class StoreImageSerializer(serializers.Serializer):
+    url = serializers.URLField(allow_null=True)
+    thumbnail = serializers.URLField(allow_null=True)
+    width = serializers.IntegerField()
+    height = serializers.IntegerField()
+
+
+class StoreOrderItemSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    quantity = serializers.IntegerField()
+    unit_price = serializers.IntegerField()
+    line_total = serializers.IntegerField()
+    note = serializers.CharField()
+    product_id = serializers.UUIDField(allow_null=True)
+    options = serializers.ListField(child=serializers.CharField())
+
+
+class StoreTimelineEventSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=OrderStatus.choices)
+    at = serializers.DateTimeField()
 
 
 class StoreOptionSerializer(serializers.ModelSerializer):
@@ -88,6 +111,7 @@ class StoreProductSerializer(serializers.ModelSerializer):
             "option_groups",
         ]
 
+    @extend_schema_field(StoreImageSerializer(many=True))
     def get_images(self, obj: Product) -> list[dict[str, Any]]:
         return [
             {
@@ -223,6 +247,7 @@ class StoreOrderSerializer(serializers.ModelSerializer):
             "timeline",
         ]
 
+    @extend_schema_field(StoreOrderItemSerializer(many=True))
     def get_items(self, obj: Order) -> list[dict[str, Any]]:
         from core.serializers import current_lang
 
@@ -248,5 +273,6 @@ class StoreOrderSerializer(serializers.ModelSerializer):
 
         return customer_can_cancel(obj)
 
+    @extend_schema_field(StoreTimelineEventSerializer(many=True))
     def get_timeline(self, obj: Order) -> list[dict[str, Any]]:
         return [{"status": e.to_status, "at": e.created_at} for e in obj.events.all()]

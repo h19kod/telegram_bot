@@ -17,7 +17,10 @@ export function Price({ price, compareAt, className }: { price: number;
   );
 }
 
-export function ProductImage({ product, className }: { product: Product; className?: string }) {
+export function ProductImage({ product, className }: {
+  product: Pick<Product, "images" | "name">;
+  className?: string;
+}) {
   const img = product.images[0];
   const src = img?.thumbnail || img?.url;
   return src ? (

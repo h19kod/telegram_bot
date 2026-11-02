@@ -18,9 +18,16 @@ from core.errors import DomainError
 from core.tenancy import IsBusinessMember, TenantPrimaryKeyRelatedField, TenantViewSet
 
 
+class PermissionCodesField(serializers.ListField):
+    """Permission codenames: written as a list, read back sorted from the role."""
+
+    def get_attribute(self, instance: Role) -> list[str]:
+        return sorted(instance.permissions.values_list("codename", flat=True))
+
+
 class RoleSerializer(serializers.ModelSerializer):
-    permissions = serializers.ListField(
-        child=serializers.ChoiceField(choices=list(PERMISSIONS)), required=False, write_only=True
+    permissions = PermissionCodesField(
+        child=serializers.ChoiceField(choices=list(PERMISSIONS)), required=False
     )
     members_count = serializers.SerializerMethodField()
 
@@ -28,11 +35,6 @@ class RoleSerializer(serializers.ModelSerializer):
         model = Role
         fields = ["id", "name", "is_owner", "is_system", "permissions", "members_count"]
         read_only_fields = ["id", "is_owner", "is_system"]
-
-    def to_representation(self, instance: Role) -> dict[str, Any]:
-        data = super().to_representation(instance)
-        data["permissions"] = sorted(instance.permissions.values_list("codename", flat=True))
-        return data
 
     def get_members_count(self, obj: Role) -> int:
         return obj.memberships.filter(is_active=True).count()
@@ -88,8 +90,8 @@ class PermissionListView(APIView):
 
 
 class MemberSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(source="user.email", read_only=True)
-    phone = serializers.CharField(source="user.phone", read_only=True)
+    email = serializers.EmailField(source="user.email", read_only=True, allow_null=True)
+    phone = serializers.CharField(source="user.phone", read_only=True, allow_null=True)
     full_name = serializers.CharField(source="user.full_name", read_only=True)
     has_telegram = serializers.SerializerMethodField()
     role = TenantPrimaryKeyRelatedField(queryset=Role.objects.all())

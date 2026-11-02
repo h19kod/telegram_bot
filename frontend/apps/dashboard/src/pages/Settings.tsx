@@ -5,7 +5,7 @@ import { PageHeader } from "../components/Shell";
 import { Badge, Button, Card, Empty, ErrorBox, errorMessage, Field, Input, Loading, Select, Table,
   TextArea, Toggle, useUi } from "../components/ui";
 import { ApiError, del, download, get, patch, post, put, upload, type Branch, type Business,
-  type Settings } from "../lib/api";
+  type Settings, type SubscriptionOverview, type SupportTicket, type TelegramOverview } from "../lib/api";
 import { useBizKey, useBizPath, useSession } from "../lib/session";
 import { rangeFor, SalesChart, TopProducts } from "./Overview";
 
@@ -33,7 +33,7 @@ export function SettingsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: key("business") }), onError: onErr });
   if (biz.isPending || cfg.isPending || !b || !s) return <Loading />;
   if (biz.isError) return <ErrorBox error={biz.error} />;
-  const pm = (m: string, on: boolean) => setS({ ...s, payment_methods: on ? [...new Set([...s.payment_methods, m])] : s.payment_methods.filter((x) => x !== m) });
+  const pm = (m: Settings["payment_methods"][number], on: boolean) => setS({ ...s, payment_methods: on ? [...new Set([...s.payment_methods, m])] : s.payment_methods.filter((x) => x !== m) });
   return (
     <>
       <PageHeader title={t("settings")} />
@@ -52,7 +52,7 @@ export function SettingsPage() {
             <Field label={t("description_en")} className="sm:col-span-2"><TextArea dir="ltr" value={b.description_en} onChange={(e) => setB({ ...b, description_en: e.target.value })} /></Field>
             <Field label={t("phone")} error={errs.phone}><Input dir="ltr" value={b.phone} onChange={(e) => setB({ ...b, phone: e.target.value })} /></Field>
             <Field label={t("whatsapp")} error={errs.whatsapp}><Input dir="ltr" value={b.whatsapp} onChange={(e) => setB({ ...b, whatsapp: e.target.value })} /></Field>
-            <Field label={t("language")}><Select value={b.default_language} onChange={(e) => setB({ ...b, default_language: e.target.value })}><option value="ar">العربية</option><option value="en">English</option></Select></Field>
+            <Field label={t("language")}><Select value={b.default_language} onChange={(e) => setB({ ...b, default_language: e.target.value as Business["default_language"] })}><option value="ar">العربية</option><option value="en">English</option></Select></Field>
           </div>
         </Card>
         <Card title={t("ordering_rules")} actions={<Button size="sm" disabled={saveCfg.isPending} onClick={() => saveCfg.mutate()}>{t("save")}</Button>}>
@@ -113,8 +113,7 @@ function BranchCard({ branch }: { branch: Branch }) {
   );
 }
 
-interface TgStatus { has_own_bot: boolean; bot: { username: string; webhook_status: string; last_error: string } | null;
-  shared_bot_username: string | null; deep_link: string | null }
+type TgStatus = TelegramOverview;
 
 export function TelegramPage() {
   const { t } = useSession();
@@ -168,9 +167,7 @@ export function TelegramPage() {
   );
 }
 
-interface SubInfo { subscription: { plan: string; status: string; current_period_end: string | null } | null;
-  entitlements: Record<string, unknown>; usage: Record<string, number>;
-  plans: { code: string; name_ar: string; name_en: string; monthly_price: number; currency: string; entitlements: Record<string, unknown> }[] }
+type SubInfo = SubscriptionOverview;
 
 export function SubscriptionPage() {
   const { t, money, lang } = useSession();
@@ -288,7 +285,7 @@ export function AccountPage() {
   );
 }
 
-interface Ticket { id: string; subject: string; status: string; messages: { id: string; body: string; is_from_platform: boolean; author_name: string; created_at: string }[] }
+type Ticket = SupportTicket;
 
 export function SupportPage() {
   const { t } = useSession();

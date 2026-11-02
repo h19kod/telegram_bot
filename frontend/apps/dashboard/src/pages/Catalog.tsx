@@ -49,7 +49,7 @@ export function ProductsPage() {
           <Table empty={!q.data.results.length} head={["", t("name_ar"), t("category"), t("price"), t("stock"), t("availability")]}>
             {q.data.results.map((p) => (
               <tr key={p.id} className="hover:bg-bg2/60">
-                <td className="w-14 px-4 py-2">{p.images[0] ? <img src={p.images[0].thumbnail || p.images[0].image} alt="" className="size-10 rounded-md object-cover" />
+                <td className="w-14 px-4 py-2">{p.images[0] ? <img src={p.images[0].thumbnail || p.images[0].image || undefined} alt="" className="size-10 rounded-md object-cover" />
                   : <div className="grid size-10 place-items-center rounded-md bg-bg2">🍽</div>}</td>
                 <td className="px-4 py-2"><button type="button" className="text-start font-medium hover:text-accent" onClick={() => setEditing(p.id)}>{p.name_ar}</button>
                   {p.option_groups.length > 0 && <div className="text-[12px] text-hint">{p.option_groups.map((g) => g.name_ar).join(" · ")}</div>}</td>
@@ -149,7 +149,7 @@ function ProductEditor({ id, categories, onClose, onSaved }: { id: string; categ
                 <div className="flex flex-wrap gap-3">
                   {q.data.images.map((img) => (
                     <div key={img.id} className="relative">
-                      <img src={img.thumbnail || img.image} alt="" className="size-24 rounded-lg object-cover" />
+                      <img src={img.thumbnail || img.image || undefined} alt="" className="size-24 rounded-lg object-cover" />
                       <button type="button" aria-label={t("delete")} onClick={() => delImg.mutate(img.id)}
                         className="absolute -top-2 -end-2 grid size-6 place-items-center rounded-full bg-danger text-[12px] text-white">✕</button>
                     </div>

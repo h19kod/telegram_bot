@@ -5,7 +5,9 @@ tests/test_openapi.py checks real responses against these, so they cannot drift 
 
 from rest_framework import serializers
 
+from apps.businesses.models import BusinessType
 from apps.storefront.serializers import StoreProductListSerializer
+from core.models import Language
 
 
 class StoreMeSerializer(serializers.Serializer):
@@ -13,7 +15,7 @@ class StoreMeSerializer(serializers.Serializer):
     first_name = serializers.CharField()
     full_name = serializers.CharField()
     phone = serializers.CharField()
-    language = serializers.CharField()
+    language = serializers.ChoiceField(choices=Language.choices)
     orders_count = serializers.IntegerField()
 
 
@@ -30,12 +32,12 @@ class StoreInfoSerializer(serializers.Serializer):
     name_ar = serializers.CharField()
     name_en = serializers.CharField()
     description = serializers.CharField()
-    business_type = serializers.CharField()
+    business_type = serializers.ChoiceField(choices=BusinessType.choices)
     logo = serializers.URLField(allow_null=True)
     cover = serializers.URLField(allow_null=True)
     phone = serializers.CharField()
     currency = serializers.CharField()
-    default_language = serializers.CharField()
+    default_language = serializers.ChoiceField(choices=Language.choices)
     is_open = serializers.BooleanField()
     is_active = serializers.BooleanField()
     accepts_delivery = serializers.BooleanField()
