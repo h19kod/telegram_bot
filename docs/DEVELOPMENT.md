@@ -100,3 +100,16 @@ Set `AI_API_KEY` (Anthropic) in `.env`, enable the assistant in the dashboard â†
 (needs a plan with `ai_assistant`), then chat with the bot in free text. Without a key the bot
 falls back to normal search. Tests use a scripted provider (`AI_PROVIDER=scripted`) and never call
 the network.
+
+## End-to-end tests (Playwright)
+
+```bash
+make e2e
+```
+
+Starts its own backend (port 8100) on a separate `sop_e2e` database that is recreated and seeded
+on every run (`manage.py e2e_reset`, which refuses any database not named `*_e2e`), plus the Mini
+App (5180) and dashboard (5181) dev servers. PostgreSQL and Redis must be running. Scenario
+(`frontend/e2e/order-flow.spec.ts`): a customer orders in the Mini App (phone viewport, signed
+test initData), the owner accepts it in the dashboard (desktop viewport), the customer sees the
+new status. Failures keep a trace: `npx playwright show-trace frontend/test-results/.../trace.zip`.

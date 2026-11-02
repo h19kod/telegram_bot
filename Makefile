@@ -1,7 +1,7 @@
 # Common tasks. With Podman: make COMPOSE=podman-compose ...
 COMPOSE ?= docker compose
 
-.PHONY: test lint build up release down logs ps backup schema
+.PHONY: test lint build up release down logs ps backup schema e2e
 
 test:
 	cd backend && uv run pytest
@@ -13,6 +13,10 @@ schema:
 	cd backend && uv run python manage.py spectacular --format openapi-json --validate --fail-on-warn \
 		--file ../frontend/packages/shared/openapi.json
 	cd frontend && npm run gen:api -w @sop/shared
+
+# Browser end-to-end tests (Playwright): needs PostgreSQL + Redis; uses its own sop_e2e database.
+e2e:
+	cd frontend && npm run e2e
 
 lint:
 	cd backend && uv run ruff check . && uv run ruff format --check .
